@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Smart Office — Điện thoại</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<style>
+:root {
+  --bg:#09090b; --bg2:#0f0f12; --bg3:#18181c; --bg4:#1e1e24;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --text:#eeeef0; --text2:#9090a0; --text3:#505060;
+  --accent:#22d3a0; --adim:rgba(34,211,160,0.12); --adim2:rgba(34,211,160,0.22);
+  --warn:#f59e0b; --wdim:rgba(245,158,11,0.12);
+  --danger:#ef4444; --ddim:rgba(239,68,68,0.12);
+  --info:#3b82f6; --idim:rgba(59,130,246,0.12);
+  --mono:'IBM Plex Mono',monospace; --sans:'Outfit',sans-serif;
+  --r:8px; --r2:12px; --r3:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;padding-bottom:80px;}
+
+/* STATUS BAR */
+.statusbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.app-name{font-size:15px;font-weight:700;letter-spacing:-0.01em;}
+.conn-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);padding:3px 8px;border-radius:20px;border:1px solid;transition:all 0.3s;}
+.conn-pill.on{color:var(--accent);background:var(--adim);border-color:rgba(34,211,160,0.25);}
+.conn-pill.off{color:var(--text3);background:var(--bg4);border-color:var(--border);}
+.conn-pill.cx{color:var(--warn);background:var(--wdim);border-color:rgba(245,158,11,0.25);}
+.dot{width:5px;height:5px;border-radius:50%;animation:blink 2s infinite;}
+.dg{background:var(--accent);} .dy{background:var(--warn);} .dr{background:var(--danger);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* MAIN */
+.content{padding:14px;}
+
+/* CONNECT BTN */
+.connect-btn{width:100%;padding:16px;border-radius:var(--r2);border:1px solid var(--accent);background:var(--adim2);color:var(--accent);font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;transition:all 0.2s;-webkit-tap-highlight-color:transparent;}
+.connect-btn:active{transform:scale(0.98);}
+.connect-btn.connected{border-color:rgba(34,211,160,0.3);color:var(--accent2);background:var(--adim);}
+
+/* TEMP DISPLAY */
+.temp-display{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:18px;margin-bottom:12px;position:relative;overflow:hidden;}
+.temp-display::after{content:'';position:absolute;top:-50px;right:-50px;width:160px;height:160px;border-radius:50%;opacity:0.07;transition:background 0.5s;}
+.temp-display.normal::after{background:var(--accent);}
+.temp-display.warm::after{background:var(--warn);}
+.temp-display.hot::after{background:var(--danger);}
+.td-label{font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;}
+.td-val{font-size:56px;font-weight:800;font-family:var(--mono);letter-spacing:-0.04em;line-height:1;transition:color 0.4s;}
+.td-val.normal{color:var(--accent);}
+.td-val.warm{color:var(--warn);}
+.td-val.hot{color:var(--danger);animation:shake 0.4s infinite;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+.td-meta{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:6px;}
+.td-bar{height:4px;background:var(--bg4);border-radius:2px;margin-top:12px;overflow:hidden;}
+.td-fill{height:100%;border-radius:2px;transition:width 0.5s,background 0.4s;}
+.td-marks{display:flex;justify-content:space-between;margin-top:3px;}
+.td-mark{font-size:9px;font-family:var(--mono);color:var(--text3);}
+.alert-chip{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:var(--r);font-size:12px;font-family:var(--mono);font-weight:600;margin-top:10px;animation:chipblink 1s infinite;}
+.alert-chip.danger{background:var(--ddim);color:var(--danger);}
+.alert-chip.warn{background:var(--wdim);color:var(--warn);}
+.alert-chip.hidden{display:none;}
+@keyframes chipblink{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* SEND BUTTON */
+.send-btn{width:100%;padding:15px;border-radius:var(--r2);border:none;background:var(--accent);color:#000;font-family:var(--sans);font-size:16px;font-weight:800;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s;letter-spacing:-0.01em;}
+.send-btn:active{transform:scale(0.97);background:var(--accent);}
+.send-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* SECTION */
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:12px;}
+.sec-title{font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;}
+
+/* SLIDER */
+.slider-wrap{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.slider-lbl{font-size:11px;font-family:var(--mono);color:var(--text2);min-width:60px;}
+input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:var(--bg4);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid var(--bg);cursor:pointer;box-shadow:0 0 6px rgba(34,211,160,0.5);}
+.slider-val{font-size:16px;font-weight:700;font-family:var(--mono);min-width:52px;text-align:right;}
+
+/* GRID BUTTONS */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.action-btn{padding:12px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;transition:all 0.15s;}
+.action-btn:active{transform:scale(0.97);}
+.action-btn .ico{font-size:20px;}
+.action-btn.primary{border-color:rgba(34,211,160,0.3);background:var(--adim);color:var(--accent);}
+.action-btn.warn-btn{border-color:rgba(245,158,11,0.3);background:var(--wdim);color:var(--warn);}
+
+/* DEVICE LIST */
+.dev-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);}
+.dev-item:last-child{border:none;}
+.dev-ico{font-size:18px;width:28px;text-align:center;}
+.dev-nm{flex:1;font-size:13px;font-weight:600;}
+.dev-loc{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.tog{width:42px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;transition:background 0.2s;outline:none;flex-shrink:0;}
+.tog.on{background:var(--accent);}
+.tog.off{background:var(--bg4);}
+.tog::after{content:'';position:absolute;width:18px;height:18px;background:white;border-radius:50%;top:3px;transition:left 0.2s;}
+.tog.on::after{left:21px;} .tog.off::after{left:3px;}
+
+/* LOG */
+.log-item{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.log-item:last-child{border:none;}
+.log-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.log-msg{font-size:11px;font-family:var(--mono);color:var(--text2);}
+.log-time{font-size:9px;font-family:var(--mono);color:var(--text3);margin-top:2px;}
+
+/* TABS */
+.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);z-index:100;}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 6px;cursor:pointer;font-size:10px;font-family:var(--sans);font-weight:500;color:var(--text3);gap:3px;transition:color 0.15s;border:none;background:transparent;}
+.tab:active{background:var(--bg3);}
+.tab.active{color:var(--accent);}
+.tab .ticon{font-size:18px;}
+
+/* TOAST */
+.twr{position:fixed;top:70px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:999;pointer-events:none;width:90%;}
+.toast{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;font-size:12px;font-family:var(--mono);color:var(--text);display:flex;align-items:center;gap:7px;animation:ti 0.2s ease;box-shadow:0 8px 24px rgba(0,0,0,0.5);width:100%;justify-content:center;}
+@keyframes ti{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.toast.to{animation:to 0.2s ease forwards;}
+@keyframes to{to{opacity:0;transform:translateY(-8px)}}
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:16px;">📱</span>
+    <div class="app-name">Smart Office</div>
+  </div>
+  <div class="conn-pill cx" id="cpill">
+    <span class="dot dy" id="cdot"></span>
+    <span id="ctext">Đang kết nối...</span>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- PAGE: TEMP (default) -->
+  <div id="pg-temp">
+
+    <!-- CONNECT BUTTON -->
+    <button class="connect-btn" id="conn-btn" onclick="doConnect()">
+      <span>📡</span> Kết nối Dashboard
+    </button>
+
+    <!-- TEMP HERO -->
+    <div class="temp-display normal" id="td">
+      <div class="td-label">Nhiệt độ hiện tại</div>
+      <div class="td-val normal" id="td-val">--°C</div>
+      <div class="td-meta" id="td-meta">Chưa có dữ liệu</div>
+      <div class="td-bar"><div class="td-fill" id="td-fill" style="width:0%;background:var(--accent);"></div></div>
+      <div class="td-marks">
+        <span class="td-mark">15°C</span>
+        <span class="td-mark" style="color:var(--warn);">⚠ 29°C</span>
+        <span class="td-mark" style="color:var(--danger);">🔴 35°C</span>
+        <span class="td-mark">40°C</span>
+      </div>
+      <div class="alert-chip hidden" id="alert-chip">⚡ VƯỢT NGƯỠNG — Gửi cảnh báo!</div>
+    </div>
+
+    <!-- SEND BUTTON -->
+    <button class="send-btn" id="send-btn" onclick="sendCurrentTemp()" disabled>
+      <span>📤</span> Gửi lên Dashboard
+    </button>
+
+    <!-- ACTIONS GRID -->
+    <div class="grid-2" style="margin-bottom:12px;">
+      <button class="action-btn primary" onclick="getGPSTemp()">
+        <span class="ico">🌤</span>
+        <span>Nhiệt độ ngoài trời</span>
+        <span style="font-size:9px;font-family:var(--mono);opacity:0.7;">GPS + Open-Meteo</span>
+      </button>
+      <button class="action-btn primary" onclick="getBatteryTemp()">
+        <span class="ico">🔋</span>
+        <span>Nhiệt độ pin</span>
+        <span style="font-size:9px;font-family:var(--mono);opacity:0.7;">Battery API</span>
+      </button>
+    </div>
+
+    <!-- MANUAL SLIDER -->
+    <div class="section">
+      <div class="sec-title">🎛️ Nhập thủ công</div>
+      <div class="slider-wrap">
+        <span class="slider-lbl">Nhiệt độ:</span>
+        <input type="range" min="15" max="40" value="27" step="0.5" id="manual-slider" oninput="updateManual(+this.value)">
+        <span class="slider-val" id="manual-val">27°C</span>
+      </div>
+      <button class="action-btn" style="width:100%;flex-direction:row;justify-content:center;" onclick="sendManual()">
+        Gửi nhiệt độ thủ công
+      </button>
+    </div>
+
+    <!-- AUTO SEND -->
+    <div class="section">
+      <div class="sec-title">⏱ Tự động gửi</div>
+      <div class="grid-2">
+        <button class="action-btn" id="auto-btn" onclick="toggleAutoSend()">
+          <span class="ico">⏱</span>
+          <span id="auto-label">Bắt đầu auto</span>
+          <span style="font-size:9px;font-family:var(--mono);opacity:0.7;">Mỗi 5 giây</span>
+        </button>
+        <button class="action-btn warn-btn" onclick="sendDangerTemp()">
+          <span class="ico">🔴</span>
+          <span>Test 32°C</span>
+          <span style="font-size:9px;font-family:var(--mono);opacity:0.7;">Kích hoạt cảnh báo</span>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /pg-temp -->
+
+  <!-- PAGE: DEVICES -->
+  <div id="pg-devices" style="display:none;">
+    <div class="section">
+      <div class="sec-title">Điều khiển thiết bị</div>
+      <div id="dev-list"></div>
+    </div>
+    <div style="font-size:11px;font-family:var(--mono);color:var(--text3);text-align:center;padding:4px 0;">
+      Thay đổi sẽ đồng bộ lên dashboard ngay lập tức
+    </div>
+  </div>
+
+  <!-- PAGE: LOG -->
+  <div id="pg-log" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="font-size:12px;font-family:var(--mono);color:var(--text3);">Nhật ký gửi dữ liệu</div>
+      <button onclick="clearMobileLog()" style="font-size:11px;font-family:var(--mono);color:var(--text3);background:none;border:none;cursor:pointer;">Xóa</button>
+    </div>
+    <div class="section" style="max-height:400px;overflow-y:auto;">
+      <div id="mlog"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: INFO -->
+  <div id="pg-info" style="display:none;">
+    <div class="section">
+      <div class="sec-title">Thông tin kết nối</div>
+      <div style="font-size:12px;font-family:var(--mono);color:var(--text2);line-height:2;">
+        Room: <span style="color:var(--accent);" id="info-room">--</span><br>
+        Channel: <span style="color:var(--warn);" id="info-ch">--</span><br>
+        Trạng thái: <span id="info-status">--</span><br>
+        Đã gửi: <span style="color:var(--accent);" id="info-sent">0</span> điểm dữ liệu
+      </div>
+    </div>
+    <div class="section">
+      <div class="sec-title">Cảm biến khả dụng</div>
+      <div id="sensor-list"></div>
+    </div>
+    <div class="section">
+      <div class="sec-title">Về hệ thống</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7;">
+        Smart Office Mobile là giao diện điện thoại trong hệ thống kiến trúc Microservices + Event-Driven.<br><br>
+        Điện thoại đóng vai trò <strong style="color:var(--accent);">IoT Device + Mobile Controller</strong> — vừa gửi dữ liệu cảm biến vừa điều khiển thiết bị.
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- BOTTOM TABS -->
+<div class="tabs">
+  <button class="tab active" data-tab="temp" onclick="switchTab('temp')"><span class="ticon">🌡</span>Nhiệt độ</button>
+  <button class="tab" data-tab="devices" onclick="switchTab('devices')"><span class="ticon">💡</span>Thiết bị</button>
+  <button class="tab" data-tab="log" onclick="switchTab('log')"><span class="ticon">📋</span>Nhật ký</button>
+  <button class="tab" data-tab="info" onclick="switchTab('info')"><span class="ticon">⚙️</span>Cài đặt</button>
+</div>
+
+<div class="twr" id="twr"></div>
+
+<script>
+// ─── ROOM ID FROM URL OR LOCALSTORAGE ────────────────────────────────────
+const params = new URLSearchParams(window.location.search);
+const ROOM = params.get('room') || localStorage.getItem('so-room') || 'default';
+const CHANNEL_ID = 'smart-office-' + ROOM;
+
+// ─── STATE ───────────────────────────────────────────────────────────────
+let currentTemp = null;
+let currentSource = '';
+let connected = false;
+let autoSendTimer = null;
+let sendCount = 0;
+let mlog = [];
+let channel = null;
+let ably = null;
+
+const DEVS = [
+  {id:1,nm:'Đèn phòng họp A',type:'light',loc:'Phòng họp A',on:true,ico:'💡'},
+  {id:2,nm:'Điều hòa tầng 5',type:'ac',loc:'Khu làm việc',on:false,ico:'❄️'},
+  {id:3,nm:'Camera cửa chính',type:'camera',loc:'Cửa chính',on:true,ico:'📷'},
+  {id:4,nm:'Đèn hành lang',type:'light',loc:'Hành lang',on:true,ico:'💡'},
+  {id:5,nm:'Điều hòa phòng họp',type:'ac',loc:'Phòng họp A',on:true,ico:'❄️'},
+  {id:6,nm:'Đèn khu bếp',type:'light',loc:'Khu bếp',on:false,ico:'💡'},
+];
+
+// ─── ABLY ────────────────────────────────────────────────────────────────
+function initAbly() {
+  try {
+    ably = new Ably.Realtime({
+      key: 'xVLyHw.NfDFIA:fDm3OmVBJjXBXJVgqGlX0iQxS5-0RXD3b-y3SVCIT0I',
+      clientId: 'mobile-' + Date.now()
+    });
+    ably.connection.on('connected', () => {
+      setConn('on','Đã kết nối');
+      connected = true;
+      channel = ably.channels.get(CHANNEL_ID);
+
+      // Listen for alerts from dashboard
+      channel.subscribe('alert', (msg) => {
+        const d = msg.data;
+        if(d.type === 'temp_high') toast(`⚡ Dashboard: Nhiệt độ cao! (${d.val}°C)`,'danger');
+      });
+      channel.subscribe('device-state', (msg) => {
+        const d = msg.data;
+        const dev = DEVS.find(x=>x.id===d.deviceId);
+        if(dev){ dev.on=d.state; renderDevices(); }
+      });
+
+      document.getElementById('send-btn').disabled = false;
+      document.getElementById('conn-btn').textContent = '✓ Đã kết nối Dashboard';
+      document.getElementById('conn-btn').className = 'connect-btn connected';
+
+      // Send ping
+      channel.publish('ping', {from:'mobile', time: Date.now()});
+      toast('Đã kết nối với Dashboard!','ok');
+    });
+    ably.connection.on('disconnected', () => { setConn('off','Mất kết nối'); connected=false; document.getElementById('send-btn').disabled=true; });
+    ably.connection.on('connecting', () => setConn('cx','Đang kết nối...'));
+    ably.connection.on('failed', () => {
+      setConn('off','Kết nối thất bại');
+      toast('Không kết nối được. Kiểm tra internet.','danger');
+    });
+  } catch(e) { setConn('off','Lỗi'); console.error(e); }
+}
+
+function doConnect() {
+  if(!connected) {
+    toast('Đang kết nối...','warn');
+    if(!ably) initAbly();
+  }
+}
+
+function setConn(state, text) {
+  const pill = document.getElementById('cpill');
+  const dot = document.getElementById('cdot');
+  pill.className = 'conn-pill ' + state;
+  dot.className = 'dot ' + (state==='on'?'dg':state==='cx'?'dy':'dr');
+  document.getElementById('ctext').textContent = text;
+  document.getElementById('info-status').textContent = text;
+  document.getElementById('info-status').style.color = state==='on'?'var(--accent)':state==='cx'?'var(--warn)':'var(--danger)';
+}
+
+// ─── SEND TEMP ────────────────────────────────────────────────────────────
+function sendTemp(val, source, label) {
+  val = parseFloat(val);
+  if(isNaN(val)) return;
+  currentTemp = val;
+  currentSource = source;
+
+  // Update local display
+  updateTempDisplay(val);
+
+  if(connected && channel) {
+    channel.publish('temperature', {value: val, source, label, timestamp: Date.now()});
+    sendCount++;
+    addMobileLog(`Gửi ${val.toFixed(1)}°C (${source})`,'ok');
+    document.getElementById('info-sent').textContent = sendCount;
+    toast(`Đã gửi ${val.toFixed(1)}°C → Dashboard`,'ok');
+  } else {
+    addMobileLog(`Offline — ${val.toFixed(1)}°C không gửi được`,'warn');
+    toast('Chưa kết nối Dashboard','warn');
+  }
+}
+
+function sendCurrentTemp() { if(currentTemp!==null) sendTemp(currentTemp, currentSource, ''); }
+function sendManual() {
+  const v = parseFloat(document.getElementById('manual-slider').value);
+  sendTemp(v, '✍️ Nhập thủ công', 'Slider');
+}
+function sendDangerTemp() { sendTemp(32.0, '⚠️ Test', 'Danger Test'); }
+
+// ─── UPDATE DISPLAY ───────────────────────────────────────────────────────
+function updateTempDisplay(val) {
+  const cls = val > 32 ? 'hot' : val > 29 ? 'warm' : 'normal';
+  const td = document.getElementById('td');
+  const tv = document.getElementById('td-val');
+  td.className = 'temp-display ' + cls;
+  tv.className = 'td-val ' + cls;
+  tv.textContent = val.toFixed(1) + '°C';
+  document.getElementById('td-meta').textContent = 'Cập nhật: ' + new Date().toTimeString().slice(0,8) + ' · ' + currentSource;
+  const pct = Math.min(100, Math.max(0, (val-15)/(40-15)*100));
+  document.getElementById('td-fill').style.width = pct + '%';
+  document.getElementById('td-fill').style.background = val>29?'var(--danger)':val>26?'var(--warn)':'var(--accent)';
+
+  const chip = document.getElementById('alert-chip');
+  if(val > 32) { chip.className='alert-chip danger'; chip.textContent='🔴 NGUY HIỂM — Nhiệt độ rất cao!'; }
+  else if(val > 29) { chip.className='alert-chip warn'; chip.textContent='⚠ CẢNH BÁO — Vượt ngưỡng 29°C!'; }
+  else { chip.className='alert-chip hidden'; }
+}
+
+// ─── SENSORS ─────────────────────────────────────────────────────────────
+function updateManual(v) {
+  document.getElementById('manual-val').textContent = v.toFixed(1) + '°C';
+  currentTemp = v;
+  currentSource = '✍️ Thủ công';
+  updateTempDisplay(v);
+}
+
+async function getGPSTemp() {
+  toast('📍 Đang lấy vị trí...','info');
+  if(!navigator.geolocation) { toast('GPS không khả dụng','danger'); return; }
+  navigator.geolocation.getCurrentPosition(async pos => {
+    try {
+      const {latitude:lat, longitude:lon} = pos.coords;
+      toast('🌐 Đang tải nhiệt độ...','info');
+      const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+      const data = await res.json();
+      const temp = data.current_weather.temperature;
+      currentTemp = temp;
+      currentSource = '🌤 Thời tiết';
+      updateTempDisplay(temp);
+      toast(`🌤 Ngoài trời: ${temp}°C`,'ok');
+      if(connected) sendTemp(temp, '🌤 Thời tiết thực tế', `GPS ${lat.toFixed(2)},${lon.toFixed(2)}`);
+    } catch(e) { toast('Lỗi tải thời tiết','danger'); }
+  }, () => toast('Không lấy được GPS — cấp quyền vị trí','warn'));
+}
+
+async function getBatteryTemp() {
+  try {
+    if(!navigator.getBattery) { toast('Battery API không được hỗ trợ trên thiết bị này','warn'); return; }
+    const bat = await navigator.getBattery();
+    // Battery API doesn't give temp directly — use level as proxy indicator
+    const level = Math.round(bat.level * 100);
+    const charging = bat.charging;
+    // Simulate phone warmth based on charging state (battery temp not directly accessible)
+    const estimatedTemp = charging ? 28 + Math.random()*5 : 24 + Math.random()*4;
+    toast(`🔋 Pin: ${level}% ${charging?'⚡Đang sạc':''} — Ước tính: ${estimatedTemp.toFixed(1)}°C`,'info');
+    currentTemp = estimatedTemp;
+    currentSource = '🔋 Pin điện thoại';
+    updateTempDisplay(estimatedTemp);
+    // Note: this is estimated, not real
+    addMobileLog(`Pin ${level}% — Nhiệt độ ước tính ${estimatedTemp.toFixed(1)}°C`,'info');
+  } catch(e) { toast('Không đọc được thông tin pin','warn'); }
+}
+
+// ─── AUTO SEND ────────────────────────────────────────────────────────────
+let autoOn = false;
+function toggleAutoSend() {
+  autoOn = !autoOn;
+  const btn = document.getElementById('auto-btn');
+  const lbl = document.getElementById('auto-label');
+  if(autoOn) {
+    autoSendTimer = setInterval(() => {
+      if(currentTemp !== null) sendTemp(currentTemp, currentSource, 'Auto');
+      else { const t = 25 + Math.sin(Date.now()/5000)*4; sendTemp(t, '🔄 Auto demo', 'Sine wave'); }
+    }, 5000);
+    btn.className = 'action-btn warn-btn';
+    lbl.textContent = 'Dừng auto';
+    toast('Tự động gửi mỗi 5 giây','ok');
+  } else {
+    clearInterval(autoSendTimer);
+    btn.className = 'action-btn';
+    lbl.textContent = 'Bắt đầu auto';
+    toast('Đã dừng auto send','warn');
+  }
+}
+
+// ─── DEVICES ─────────────────────────────────────────────────────────────
+function renderDevices() {
+  document.getElementById('dev-list').innerHTML = DEVS.map(d=>
+    `<div class="dev-item">
+      <span class="dev-ico">${d.ico}</span>
+      <div style="flex:1;">
+        <div class="dev-nm">${d.nm}</div>
+        <div class="dev-loc">${d.loc}</div>
+      </div>
+      <button class="tog ${d.on?'on':'off'}" onclick="togDev(${d.id})"></button>
+    </div>`
+  ).join('');
+}
+function togDev(id) {
+  const d = DEVS.find(x=>x.id===id); d.on=!d.on;
+  renderDevices();
+  if(connected && channel) {
+    channel.publish('device-control',{deviceId:id,state:d.on});
+    toast(`${d.nm}: ${d.on?'Đã bật':'Đã tắt'}`,d.on?'ok':'warn');
+    addMobileLog(`Điều khiển: ${d.nm} ${d.on?'→ BẬT':'→ TẮT'}`,'ok');
+  } else toast('Chưa kết nối — lệnh không được gửi','warn');
+}
+
+// ─── LOG ─────────────────────────────────────────────────────────────────
+function addMobileLog(msg, type) {
+  mlog.unshift({msg, type, time: new Date().toTimeString().slice(0,8)});
+  if(mlog.length>30) mlog.pop();
+  renderMobileLog();
+}
+function renderMobileLog() {
+  const dc={ok:'var(--accent)',warn:'var(--warn)',danger:'var(--danger)',info:'var(--info)'};
+  document.getElementById('mlog').innerHTML = mlog.map(l=>
+    `<div class="log-item"><div class="log-dot" style="background:${dc[l.type]};"></div>
+    <div><div class="log-msg">${l.msg}</div><div class="log-time">${l.time}</div></div></div>`
+  ).join('') || '<div style="padding:8px;font-size:11px;font-family:var(--mono);color:var(--text3);">Chưa có log</div>';
+}
+function clearMobileLog(){ mlog=[]; renderMobileLog(); }
+
+// ─── SENSORS INFO ─────────────────────────────────────────────────────────
+function renderSensorInfo() {
+  document.getElementById('info-room').textContent = ROOM;
+  document.getElementById('info-ch').textContent = CHANNEL_ID;
+  const sensors=[
+    {nm:'GPS + Thời tiết',ico:'🌤',avail:!!navigator.geolocation},
+    {nm:'Battery API',ico:'🔋',avail:!!navigator.getBattery},
+    {nm:'Nhập thủ công',ico:'✍️',avail:true},
+    {nm:'Accelerometer',ico:'📐',avail:!!window.DeviceMotionEvent},
+    {nm:'Geolocation',ico:'📍',avail:!!navigator.geolocation},
+  ];
+  document.getElementById('sensor-list').innerHTML = sensors.map(s=>
+    `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:16px;">${s.ico}</span>
+      <span style="flex:1;font-size:13px;">${s.nm}</span>
+      <span style="font-size:11px;font-family:var(--mono);color:${s.avail?'var(--accent)':'var(--text3)'};">${s.avail?'✓ Khả dụng':'— Không có'}</span>
+    </div>`
+  ).join('');
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────
+const pages={temp:'pg-temp',devices:'pg-devices',log:'pg-log',info:'pg-info'};
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  Object.values(pages).forEach(p=>document.getElementById(p).style.display='none');
+  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+  document.getElementById(pages[tab]).style.display='block';
+  if(tab==='info') renderSensorInfo();
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────
+function toast(msg,type='info'){
+  const c={info:'var(--info)',ok:'var(--accent)',warn:'var(--warn)',danger:'var(--danger)'};
+  const i={info:'ℹ',ok:'✓',warn:'⚠',danger:'⚡'};
+  const w=document.getElementById('twr');
+  const el=document.createElement('div');
+  el.className='toast';
+  el.innerHTML=`<span style="color:${c[type]}">${i[type]}</span>${msg}`;
+  w.appendChild(el);
+  setTimeout(()=>{el.classList.add('to');setTimeout(()=>el.remove(),200);},2800);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+renderDevices();
+renderMobileLog();
+addMobileLog('App khởi động','info');
+
+// Auto-init Ably if room param present
+if(params.get('room')) {
+  initAbly();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,2290 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Office — Hệ thống quản lý văn phòng thông minh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #09090b;
+      --bg2: #0f0f12;
+      --bg3: #161619;
+      --bg4: #1c1c21;
+      --bg5: #222228;
+      --border: rgba(255, 255, 255, 0.06);
+      --border2: rgba(255, 255, 255, 0.11);
+      --border3: rgba(255, 255, 255, 0.18);
+      --text: #eeeef0;
+      --text2: #9090a0;
+      --text3: #505060;
+      --text4: #303038;
+      --accent: #22d3a0;
+      --accent2: #16a87e;
+      --adim: rgba(34, 211, 160, 0.10);
+      --adim2: rgba(34, 211, 160, 0.18);
+      --warn: #f59e0b;
+      --wdim: rgba(245, 158, 11, 0.10);
+      --danger: #ef4444;
+      --ddim: rgba(239, 68, 68, 0.10);
+      --info: #3b82f6;
+      --idim: rgba(59, 130, 246, 0.10);
+      --purple: #8b5cf6;
+      --pdim: rgba(139, 92, 246, 0.10);
+      --pink: #ec4899;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'Outfit', sans-serif;
+      --r: 6px;
+      --r2: 10px;
+      --r3: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    ::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg5);
+      border-radius: 2px;
+    }
+
+    /* SHELL */
+    .shell {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main {
+      overflow-y: auto;
+    }
+
+    /* SIDEBAR */
+    .brand {
+      padding: 22px 18px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--adim2);
+      border: 1px solid rgba(34, 211, 160, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text3);
+      letter-spacing: 0.06em;
+    }
+
+    .sys-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--accent);
+      background: var(--adim);
+      border: 1px solid rgba(34, 211, 160, 0.2);
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+
+    .blink {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.3
+      }
+    }
+
+    .nav-section {
+      padding: 14px 10px 6px;
+    }
+
+    .nav-section-label {
+      font-size: 9px;
+      font-family: var(--mono);
+      color: var(--text3);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 0 8px;
+      margin-bottom: 5px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 10px;
+      border-radius: var(--r);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+      transition: all 0.12s;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .nav-item:hover {
+      color: var(--text);
+      background: var(--bg3);
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+      background: var(--adim);
+      border-color: rgba(34, 211, 160, 0.15);
+    }
+
+    .nav-ico {
+      width: 16px;
+      text-align: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .nbadge {
+      margin-left: auto;
+      background: var(--danger);
+      color: #fff;
+      font-size: 9px;
+      font-family: var(--mono);
+      padding: 1px 5px;
+      border-radius: 8px;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    .clock {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--text);
+      letter-spacing: 0.06em;
+    }
+
+    .dateline {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text3);
+      margin-top: 3px;
+      letter-spacing: 0.05em;
+    }
+
+    /* TOPBAR */
+    .topbar {
+      padding: 18px 26px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .page-badge {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text3);
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      padding: 3px 8px;
+      border-radius: var(--r);
+    }
+
+    .topbar-right {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 13px;
+      border-radius: var(--r);
+      border: 1px solid var(--border2);
+      background: transparent;
+      color: var(--text2);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+
+    .btn:hover {
+      background: var(--bg3);
+      color: var(--text);
+      border-color: var(--border3);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent2);
+      border-color: var(--accent2);
+      color: #000;
+    }
+
+    /* CONTENT */
+    .content {
+      padding: 22px 26px 40px;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    /* STAT GRID */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .scard {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .scard:hover {
+      border-color: var(--border2);
+    }
+
+    .scard-top {
+      height: 2px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      border-radius: var(--r2) var(--r2) 0 0;
+    }
+
+    .scard-lbl {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text3);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .scard-val {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .scard-sub {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text3);
+      margin-top: 5px;
+    }
+
+    /* SEC HEADER */
+    .sec-hd {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .sec-title {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text3);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* DEVICE GRID */
+    .dev-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .dcard {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 14px;
+      transition: all 0.18s;
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dcard:hover {
+      border-color: var(--border2);
+      transform: translateY(-1px);
+    }
+
+    .dcard.on {
+      border-color: rgba(34, 211, 160, 0.22);
+    }
+
+    .dcard.on::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at top right, var(--adim) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .dcard-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .dcard-ico {
+      font-size: 20px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .dcard-nm {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .dcard-loc {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--text3);
+      margin-top: 1px;
+    }
+
+    .dcard-bot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .dcard-val {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: var(--mono);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      font-size: 9px;
+      font-family: var(--mono);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .ton {
+      background: var(--adim);
+      color: var(--accent);
+    }
+
+    .toff {
+      background: var(--bg4);
+      color: var(--text3);
+    }
+
+    .twarn {
+      background: var(--wdim);
+      color: var(--warn);
+    }
+
+    .tdanger {
+      background: var(--ddim);
+      color: var(--danger);
+    }
+
+    .tinfo {
+      background: var(--idim);
+      color: var(--info);
+    }
+
+    .tpurple {
+      background: var(--pdim);
+      color: var(--purple);
+    }
+
+    /* TOGGLE */
+    .tog {
+      width: 36px;
+      height: 20px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+      outline: none;
+      flex-shrink: 0;
+    }
+
+    .tog.on {
+      background: var(--accent);
+    }
+
+    .tog.off {
+      background: var(--bg5);
+    }
+
+    .tog::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px;
+      transition: left 0.2s;
+    }
+
+    .tog.on::after {
+      left: 19px;
+    }
+
+    .tog.off::after {
+      left: 3px;
+    }
+
+    /* RULES */
+    .rcard {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      transition: border-color 0.15s;
+    }
+
+    .rcard:hover {
+      border-color: var(--border2);
+    }
+
+    .rcard.ron {
+      border-color: rgba(34, 211, 160, 0.18);
+    }
+
+    .rico {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--r);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .rnm {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .rdesc {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--text3);
+      margin-top: 2px;
+      line-height: 1.5;
+    }
+
+    .rtrig {
+      font-size: 9px;
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-top: 5px;
+      display: inline-block;
+      letter-spacing: 0.04em;
+    }
+
+    /* MONITOR */
+    .mgrid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .mcard {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 16px;
+    }
+
+    .mcard-lbl {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text3);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .mcard-val {
+      font-size: 32px;
+      font-weight: 800;
+      font-family: var(--mono);
+      margin: 6px 0;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .mbar {
+      height: 3px;
+      background: var(--bg5);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .mfill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+
+    .mbot {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+
+    .msub {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text3);
+    }
+
+    .spark {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 28px;
+      margin-top: 8px;
+    }
+
+    .spk {
+      width: 5px;
+      border-radius: 1px 1px 0 0;
+      transition: height 0.5s;
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9px;
+      font-family: var(--mono);
+      color: var(--accent);
+    }
+
+    /* NOTIFS */
+    .nitem {
+      display: flex;
+      gap: 12px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+
+    .nitem:last-child {
+      border: none;
+    }
+
+    .ndot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .ntitle {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .nbody {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--text3);
+      margin-top: 3px;
+      line-height: 1.5;
+    }
+
+    .ntime {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text4);
+      margin-top: 4px;
+    }
+
+    .nsvc {
+      font-size: 9px;
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-right: 4px;
+    }
+
+    /* USERS */
+    .ucard {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .uavatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: var(--mono);
+      flex-shrink: 0;
+    }
+
+    .unm {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .uemail {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .urole {
+      font-size: 9px;
+      font-family: var(--mono);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      margin-left: auto;
+    }
+
+    /* SIMULATION */
+    .sim-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 18px;
+      margin-top: 18px;
+    }
+
+    .sim-hd {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text3);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .sim-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    input[type=range] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 3px;
+      background: var(--bg5);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.3);
+    }
+
+    .sim-tempval {
+      font-size: 22px;
+      font-weight: 800;
+      font-family: var(--mono);
+      min-width: 64px;
+      transition: color 0.3s;
+    }
+
+    .simflow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .simstep {
+      display: flex;
+      gap: 10px;
+      padding: 9px 0;
+      position: relative;
+    }
+
+    .simstep:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 14px;
+      top: 34px;
+      bottom: 0;
+      width: 1px;
+      background: var(--border);
+    }
+
+    .simnum {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-family: var(--mono);
+      font-weight: 700;
+      flex-shrink: 0;
+      z-index: 1;
+      transition: all 0.3s;
+    }
+
+    .simbody {
+      flex: 1;
+      padding-top: 3px;
+    }
+
+    .simsvc {
+      font-size: 9px;
+      font-family: var(--mono);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      transition: color 0.3s;
+    }
+
+    .simdesc {
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    .simstep.dim .simnum {
+      background: var(--bg4);
+      color: var(--text3);
+    }
+
+    .simstep.dim .simsvc,
+    .simstep.dim .simdesc {
+      color: var(--text3);
+    }
+
+    /* MODAL */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(6px);
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .mbox {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: var(--r3);
+      padding: 22px;
+      width: 400px;
+      max-width: 92vw;
+    }
+
+    .mtitle {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .mfield {
+      margin-bottom: 12px;
+    }
+
+    .mlabel {
+      font-size: 9px;
+      font-family: var(--mono);
+      color: var(--text3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    input[type=text],
+    select {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--r);
+      padding: 8px 11px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input[type=text]:focus,
+    select:focus {
+      border-color: var(--accent);
+    }
+
+    select option {
+      background: var(--bg3);
+    }
+
+    .mbtns {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    /* TOAST */
+    .toastwrap {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 2000;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--r2);
+      padding: 10px 14px;
+      font-size: 12px;
+      font-family: var(--mono);
+      color: var(--text);
+      min-width: 220px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: tin 0.2s ease;
+      pointer-events: all;
+    }
+
+    @keyframes tin {
+      from {
+        opacity: 0;
+        transform: translateX(16px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .toast.tout {
+      animation: tout 0.25s ease forwards;
+    }
+
+    @keyframes tout {
+      to {
+        opacity: 0;
+        transform: translateX(16px)
+      }
+    }
+
+    /* LAYOUT UTILS */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 16px;
+    }
+
+    .gap {
+      margin-bottom: 18px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 11px;
+      background: var(--adim);
+      color: var(--accent);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .tbl th {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text3);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      font-weight: 500;
+    }
+
+    .tbl td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text2);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    .tbl tr:last-child td {
+      border: none;
+    }
+
+    .tbl tr:hover td {
+      background: var(--bg3);
+    }
+
+    .mono-sm {
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .check {
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .cross {
+      color: var(--text3);
+      font-size: 13px;
+    }
+
+    .partial {
+      color: var(--warn);
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">
+          <div class="brand-icon">⬡</div>
+          <div>
+            <div class="brand-name">Smart Office</div>
+            <div class="brand-sub">v1.0 · Microservices</div>
+          </div>
+        </div>
+        <div class="sys-pill"><span class="blink"></span>Hệ thống online</div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Tổng quan</div>
+        <div class="nav-item active" data-page="dashboard"><span class="nav-ico">◈</span>Dashboard</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Microservices</div>
+        <div class="nav-item" data-page="devices"><span class="nav-ico">⬡</span>Device Service</div>
+        <div class="nav-item" data-page="automation"><span class="nav-ico">⚡</span>Automation Service</div>
+        <div class="nav-item" data-page="monitoring"><span class="nav-ico">◎</span>Monitoring Service</div>
+        <div class="nav-item" data-page="notifications"><span class="nav-ico">◉</span>Notification Service <span
+            class="nbadge" id="nbadge">3</span></div>
+        <div class="nav-item" data-page="permissions"><span class="nav-ico">▣</span>Auth & Phân quyền</div>
+        <div class="nav-item" data-page="security"><span class="nav-ico">🔒</span>Bảo mật</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Tài liệu kỹ thuật</div>
+        <div class="nav-item" data-page="architecture"><span class="nav-ico">◫</span>Sơ đồ kiến trúc</div>
+        <div class="nav-item" data-page="apispec"><span class="nav-ico">≡</span>Đặc tả API</div>
+        <div class="nav-item" data-page="testing"><span class="nav-ico">✓</span>Thử nghiệm</div>
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="clock" id="clock">--:--:--</div>
+        <div class="dateline" id="ddate">Đang tải...</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="page-title" id="ptitle">Dashboard</div>
+          <div class="page-badge" id="pbadge">Tổng quan</div>
+        </div>
+        <div class="topbar-right">
+          <button class="btn" onclick="refreshAll()">↻ Làm mới</button>
+          <button class="btn btn-primary" id="main-btn" style="display:none" onclick="mainAction()">＋ Thêm</button>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- ══════════════════ DASHBOARD ══════════════════ -->
+        <div class="page active" id="page-dashboard">
+          <div class="stat-grid">
+            <div class="scard">
+              <div class="scard-top" style="background:var(--accent)"></div>
+              <div class="scard-lbl">Thiết bị online</div>
+              <div class="scard-val" style="color:var(--accent)" id="s-online">0</div>
+              <div class="scard-sub">/ 8 thiết bị</div>
+            </div>
+            <div class="scard">
+              <div class="scard-top" style="background:var(--warn)"></div>
+              <div class="scard-lbl">Nhiệt độ TB</div>
+              <div class="scard-val" style="color:var(--warn)" id="s-temp">27°C</div>
+              <div class="scard-sub">Khu làm việc</div>
+            </div>
+            <div class="scard">
+              <div class="scard-top" style="background:var(--info)"></div>
+              <div class="scard-lbl">Kịch bản active</div>
+              <div class="scard-val" style="color:var(--info)" id="s-rules">3</div>
+              <div class="scard-sub">/ 4 kịch bản</div>
+            </div>
+            <div class="scard">
+              <div class="scard-top" style="background:var(--danger)"></div>
+              <div class="scard-lbl">Cảnh báo</div>
+              <div class="scard-val" style="color:var(--danger)">2</div>
+              <div class="scard-sub">Hôm nay</div>
+            </div>
+          </div>
+
+          <div class="two-col gap">
+            <div>
+              <div class="sec-hd">
+                <div class="sec-title">Trạng thái thiết bị</div>
+              </div>
+              <div id="dash-devs"></div>
+            </div>
+            <div>
+              <div class="sec-hd">
+                <div class="sec-title">Cảnh báo gần đây</div>
+              </div>
+              <div class="card" style="padding:0 14px;" id="dash-notifs"></div>
+            </div>
+          </div>
+
+          <!-- SIMULATION -->
+          <div class="sim-panel">
+            <div class="sim-hd">▶ Mô phỏng Câu 3 — Kịch bản: Nhiệt độ vượt 29°C</div>
+            <div class="sim-row">
+              <span style="font-size:12px;font-family:var(--mono);color:var(--text2);min-width:100px;">Nhiệt độ
+                phòng</span>
+              <input type="range" min="18" max="40" value="27" step="1" id="sldr" oninput="runSim(+this.value)">
+              <span class="sim-tempval" id="stv">27°C</span>
+            </div>
+            <div class="simflow" id="simflow"></div>
+          </div>
+        </div>
+
+        <!-- ══════════════════ DEVICES ══════════════════ -->
+        <div class="page" id="page-devices">
+          <div class="sec-hd" style="margin-bottom:14px;">
+            <div class="sec-title" id="dev-count">8 thiết bị</div>
+            <select id="dev-filter" onchange="renderDevices()" style="width:auto;padding:6px 10px;font-size:11px;">
+              <option value="">Tất cả loại</option>
+              <option value="light">Đèn</option>
+              <option value="ac">Điều hòa</option>
+              <option value="camera">Camera</option>
+              <option value="sensor">Cảm biến</option>
+            </select>
+          </div>
+          <div class="dev-grid" id="devgrid"></div>
+        </div>
+
+        <!-- ══════════════════ AUTOMATION ══════════════════ -->
+        <div class="page" id="page-automation">
+          <div class="sec-hd" style="margin-bottom:14px;">
+            <div class="sec-title">4 kịch bản tự động — Rule Engine</div>
+          </div>
+          <div id="rulelist"></div>
+          <div class="card" style="margin-top:14px;">
+            <div class="sec-title" style="margin-bottom:10px;">Luồng xử lý kịch bản (Event-Driven)</div>
+            <div style="display:flex;align-items:center;gap:0;flex-wrap:wrap;margin-top:8px;" id="flow-diagram"></div>
+          </div>
+        </div>
+
+        <!-- ══════════════════ MONITORING ══════════════════ -->
+        <div class="page" id="page-monitoring">
+          <div class="sec-hd" style="margin-bottom:14px;">
+            <div class="sec-title">Dữ liệu cảm biến — Real-time</div>
+            <div class="live-badge"><span class="blink"></span>LIVE · cập nhật mỗi 2.5s</div>
+          </div>
+          <div class="mgrid" id="mgrid"></div>
+        </div>
+
+        <!-- ══════════════════ NOTIFICATIONS ══════════════════ -->
+        <div class="page" id="page-notifications">
+          <div class="sec-hd" style="margin-bottom:14px;">
+            <div class="sec-title">Nhật ký sự kiện — Notification Service</div>
+            <button class="btn" onclick="clearNotifs()">✓ Đánh dấu đã đọc</button>
+          </div>
+          <div class="card" style="padding:0 16px;" id="nlist"></div>
+        </div>
+
+        <!-- ══════════════════ AUTH & PERMISSIONS ══════════════════ -->
+        <div class="page" id="page-permissions">
+          <div class="sec-hd" style="margin-bottom:14px;">
+            <div class="sec-title">Auth Service — JWT + RBAC</div>
+          </div>
+
+          <div class="two-col gap">
+            <div>
+              <div class="sec-hd">
+                <div class="sec-title">Thành viên & Vai trò</div>
+              </div>
+              <div id="ulist"></div>
+            </div>
+            <div>
+              <div class="sec-hd">
+                <div class="sec-title">Luồng xác thực JWT</div>
+              </div>
+              <div class="card" style="padding:14px;">
+                <div id="jwt-flow"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sec-hd">
+            <div class="sec-title">Bảng phân quyền RBAC</div>
+          </div>
+          <div class="card" style="padding:0 14px;">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Chức năng</th>
+                  <th style="color:var(--purple);text-align:center;">Admin</th>
+                  <th style="color:var(--info);text-align:center;">Manager</th>
+                  <th style="color:var(--text3);text-align:center;">Nhân viên</th>
+                </tr>
+              </thead>
+              <tbody id="perm-tbl"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══════════════════ SECURITY ══════════════════ -->
+        <div class="page" id="page-security">
+          <div class="sec-hd" style="margin-bottom:14px;">
+            <div class="sec-title">Câu 4 — Đánh giá & Biện pháp bảo mật</div>
+          </div>
+
+          <!-- Risk -->
+          <div class="card gap">
+            <div class="sec-title" style="margin-bottom:10px;">Các nguy cơ tấn công đã xác định</div>
+            <div class="three-col" id="risks"></div>
+          </div>
+
+          <!-- Biện pháp 1 -->
+          <div class="two-col gap">
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <span
+                  style="background:var(--adim);color:var(--accent);font-size:9px;font-family:var(--mono);padding:3px 8px;border-radius:4px;font-weight:700;">BIỆN
+                  PHÁP 1</span>
+                <span style="font-size:14px;font-weight:700;">Xác thực & Phân quyền</span>
+              </div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+                Triển khai <strong style="color:var(--text)">JWT (JSON Web Token)</strong> tại API Gateway làm cơ chế
+                xác thực tập trung. Mỗi request phải mang token hợp lệ, được ký bằng RS256.
+              </div>
+              <div class="sec-title" style="margin-bottom:8px;">Cách triển khai</div>
+              <div id="sec1-steps"></div>
+            </div>
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <span
+                  style="background:var(--idim);color:var(--info);font-size:9px;font-family:var(--mono);padding:3px 8px;border-radius:4px;font-weight:700;">BIỆN
+                  PHÁP 2</span>
+                <span style="font-size:14px;font-weight:700;">Mã hóa kênh truyền thông</span>
+              </div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+                Toàn bộ kênh truyền thông được mã hóa bằng <strong style="color:var(--text)">TLS 1.3</strong> cho
+                REST/HTTPS và <strong style="color:var(--text)">MQTT over TLS</strong> cho thiết bị IoT.
+              </div>
+              <div class="sec-title" style="margin-bottom:8px;">Cách triển khai</div>
+              <div id="sec2-steps"></div>
+            </div>
+          </div>
+
+          <!-- Security matrix -->
+          <div class="card">
+            <div class="sec-title" style="margin-bottom:10px;">Ma trận bảo mật hệ thống</div>
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Lớp hệ thống</th>
+                  <th>Nguy cơ</th>
+                  <th>Biện pháp</th>
+                  <th>Mức độ</th>
+                </tr>
+              </thead>
+              <tbody id="sec-matrix"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══════════════════ ARCHITECTURE ══════════════════ -->
+        <div class="page" id="page-architecture">
+          <div class="sec-hd" style="margin-bottom:14px;">
+            <div class="sec-title">Câu 2 — Sơ đồ kiến trúc tổng thể</div>
+          </div>
+
+          <div class="card gap">
+            <svg viewBox="0 0 800 560" xmlns="http://www.w3.org/2000/svg"
+              style="width:100%;height:auto;font-family:'IBM Plex Mono',monospace;">
+              <defs>
+                <marker id="a0" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L7,3z" fill="rgba(255,255,255,0.15)" />
+                </marker>
+                <marker id="a1" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L7,3z" fill="#22d3a0" />
+                </marker>
+                <marker id="a2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L7,3z" fill="#f59e0b" />
+                </marker>
+              </defs>
+
+              <!-- Layer bands -->
+              <rect x="0" y="0" width="800" height="560" fill="#09090b" />
+              <rect x="60" y="8" width="6" height="540" rx="3" fill="rgba(255,255,255,0.04)" />
+
+              <!-- Layer Labels -->
+              <text x="10" y="65" font-size="8" fill="rgba(255,255,255,0.2)" letter-spacing="2"
+                transform="rotate(-90,10,65)">CLIENT</text>
+              <text x="10" y="175" font-size="8" fill="rgba(255,255,255,0.2)" letter-spacing="2"
+                transform="rotate(-90,10,175)">GATEWAY</text>
+              <text x="10" y="300" font-size="8" fill="rgba(255,255,255,0.2)" letter-spacing="2"
+                transform="rotate(-90,10,300)">SERVICES</text>
+              <text x="10" y="415" font-size="8" fill="rgba(255,255,255,0.2)" letter-spacing="2"
+                transform="rotate(-90,10,415)">BROKER</text>
+              <text x="10" y="520" font-size="8" fill="rgba(255,255,255,0.2)" letter-spacing="2"
+                transform="rotate(-90,10,520)">DATA/IOT</text>
+
+              <!-- CLIENT LAYER -->
+              <rect x="80" y="18" width="120" height="46" rx="6" fill="#1c1c21" stroke="rgba(59,130,246,0.35)"
+                stroke-width="1" />
+              <text x="140" y="36" font-size="9" fill="#3b82f6" text-anchor="middle" font-weight="600">MOBILE APP</text>
+              <text x="140" y="50" font-size="8" fill="rgba(59,130,246,0.5)" text-anchor="middle">React Native</text>
+
+              <rect x="220" y="18" width="140" height="46" rx="6" fill="#1c1c21" stroke="rgba(59,130,246,0.35)"
+                stroke-width="1" />
+              <text x="290" y="36" font-size="9" fill="#3b82f6" text-anchor="middle" font-weight="600">WEB
+                DASHBOARD</text>
+              <text x="290" y="50" font-size="8" fill="rgba(59,130,246,0.5)" text-anchor="middle">React / Next.js</text>
+
+              <rect x="380" y="18" width="120" height="46" rx="6" fill="#1c1c21" stroke="rgba(59,130,246,0.35)"
+                stroke-width="1" />
+              <text x="440" y="36" font-size="9" fill="#3b82f6" text-anchor="middle" font-weight="600">ADMIN
+                PANEL</text>
+              <text x="440" y="50" font-size="8" fill="rgba(59,130,246,0.5)" text-anchor="middle">Vue.js</text>
+
+              <rect x="520" y="18" width="120" height="46" rx="6" fill="#1c1c21" stroke="rgba(59,130,246,0.35)"
+                stroke-width="1" />
+              <text x="580" y="36" font-size="9" fill="#3b82f6" text-anchor="middle" font-weight="600">DESKTOP
+                CLIENT</text>
+              <text x="580" y="50" font-size="8" fill="rgba(59,130,246,0.5)" text-anchor="middle">Electron</text>
+
+              <!-- arrows client -> gateway -->
+              <line x1="140" y1="64" x2="290" y2="120" stroke="rgba(59,130,246,0.2)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a0)" />
+              <line x1="290" y1="64" x2="310" y2="120" stroke="rgba(59,130,246,0.2)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a0)" />
+              <line x1="440" y1="64" x2="360" y2="120" stroke="rgba(59,130,246,0.2)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a0)" />
+              <line x1="580" y1="64" x2="380" y2="120" stroke="rgba(59,130,246,0.2)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a0)" />
+
+              <!-- GATEWAY -->
+              <rect x="180" y="120" width="300" height="54" rx="8" fill="#131318" stroke="#22d3a0" stroke-width="1.5" />
+              <text x="330" y="140" font-size="10" fill="#22d3a0" text-anchor="middle" font-weight="700">API
+                GATEWAY</text>
+              <text x="330" y="155" font-size="8" fill="rgba(34,211,160,0.55)" text-anchor="middle">Kong/Nginx · JWT
+                Verify · Rate Limit · HTTPS</text>
+              <text x="330" y="167" font-size="8" fill="rgba(34,211,160,0.4)" text-anchor="middle">SSL Termination ·
+                Load Balancer · Routing</text>
+
+              <!-- arrows gateway -> services -->
+              <line x1="220" y1="174" x2="120" y2="234" stroke="rgba(34,211,160,0.3)" stroke-width="1"
+                marker-end="url(#a1)" />
+              <line x1="260" y1="174" x2="230" y2="234" stroke="rgba(34,211,160,0.3)" stroke-width="1"
+                marker-end="url(#a1)" />
+              <line x1="310" y1="174" x2="340" y2="234" stroke="rgba(34,211,160,0.3)" stroke-width="1"
+                marker-end="url(#a1)" />
+              <line x1="370" y1="174" x2="450" y2="234" stroke="rgba(34,211,160,0.3)" stroke-width="1"
+                marker-end="url(#a1)" />
+              <line x1="420" y1="174" x2="560" y2="234" stroke="rgba(34,211,160,0.3)" stroke-width="1"
+                marker-end="url(#a1)" />
+              <line x1="440" y1="174" x2="670" y2="234" stroke="rgba(34,211,160,0.3)" stroke-width="1"
+                marker-end="url(#a1)" />
+
+              <!-- AUTH SERVICE -->
+              <rect x="80" y="234" width="110" height="52" rx="6" fill="#1c1c21" stroke="rgba(139,92,246,0.4)"
+                stroke-width="1" />
+              <text x="135" y="254" font-size="9" fill="#8b5cf6" text-anchor="middle" font-weight="700">AUTH
+                SERVICE</text>
+              <text x="135" y="267" font-size="8" fill="rgba(139,92,246,0.5)" text-anchor="middle">Keycloak/JWT</text>
+              <text x="135" y="279" font-size="8" fill="rgba(139,92,246,0.4)" text-anchor="middle">RBAC · OAuth2</text>
+
+              <!-- DEVICE SERVICE -->
+              <rect x="200" y="234" width="110" height="52" rx="6" fill="#1c1c21" stroke="rgba(34,211,160,0.4)"
+                stroke-width="1" />
+              <text x="255" y="254" font-size="9" fill="#22d3a0" text-anchor="middle" font-weight="700">DEVICE
+                SVC</text>
+              <text x="255" y="267" font-size="8" fill="rgba(34,211,160,0.5)" text-anchor="middle">Node.js+MQTT</text>
+              <text x="255" y="279" font-size="8" fill="rgba(34,211,160,0.4)" text-anchor="middle">CRUD · Control</text>
+
+              <!-- AUTOMATION SERVICE -->
+              <rect x="315" y="234" width="115" height="52" rx="6" fill="#1c1c21" stroke="rgba(245,158,11,0.4)"
+                stroke-width="1" />
+              <text x="372" y="254" font-size="9" fill="#f59e0b" text-anchor="middle" font-weight="700">AUTOMATION
+                SVC</text>
+              <text x="372" y="267" font-size="8" fill="rgba(245,158,11,0.5)" text-anchor="middle">Python+Drools</text>
+              <text x="372" y="279" font-size="8" fill="rgba(245,158,11,0.4)" text-anchor="middle">Rule Engine</text>
+
+              <!-- MONITORING SERVICE -->
+              <rect x="435" y="234" width="115" height="52" rx="6" fill="#1c1c21" stroke="rgba(59,130,246,0.4)"
+                stroke-width="1" />
+              <text x="492" y="254" font-size="9" fill="#3b82f6" text-anchor="middle" font-weight="700">MONITORING
+                SVC</text>
+              <text x="492" y="267" font-size="8" fill="rgba(59,130,246,0.5)" text-anchor="middle">Go+InfluxDB</text>
+              <text x="492" y="279" font-size="8" fill="rgba(59,130,246,0.4)" text-anchor="middle">Time-series</text>
+
+              <!-- NOTIFICATION SERVICE -->
+              <rect x="555" y="234" width="115" height="52" rx="6" fill="#1c1c21" stroke="rgba(239,68,68,0.4)"
+                stroke-width="1" />
+              <text x="612" y="254" font-size="9" fill="#ef4444" text-anchor="middle" font-weight="700">NOTIFICATION
+                SVC</text>
+              <text x="612" y="267" font-size="8" fill="rgba(239,68,68,0.5)" text-anchor="middle">Firebase FCM</text>
+              <text x="612" y="279" font-size="8" fill="rgba(239,68,68,0.4)" text-anchor="middle">Push/SMS/Email</text>
+
+              <!-- REPORTING SERVICE -->
+              <rect x="675" y="234" width="100" height="52" rx="6" fill="#1c1c21" stroke="rgba(236,72,153,0.35)"
+                stroke-width="1" />
+              <text x="725" y="254" font-size="9" fill="#ec4899" text-anchor="middle" font-weight="700">REPORT
+                SVC</text>
+              <text x="725" y="267" font-size="8" fill="rgba(236,72,153,0.5)" text-anchor="middle">Python+PDF</text>
+              <text x="725" y="279" font-size="8" fill="rgba(236,72,153,0.4)" text-anchor="middle">Analytics</text>
+
+              <!-- arrows services -> kafka -->
+              <line x1="255" y1="286" x2="290" y2="370" stroke="rgba(34,211,160,0.25)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a2)" />
+              <line x1="372" y1="286" x2="360" y2="370" stroke="rgba(245,158,11,0.5)" stroke-width="1.5"
+                marker-end="url(#a2)" />
+              <line x1="492" y1="286" x2="420" y2="370" stroke="rgba(59,130,246,0.25)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a2)" />
+              <line x1="612" y1="286" x2="490" y2="370" stroke="rgba(239,68,68,0.25)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a2)" />
+
+              <!-- KAFKA -->
+              <rect x="210" y="370" width="340" height="46" rx="8" fill="#131318" stroke="#f59e0b" stroke-width="1.5" />
+              <text x="380" y="389" font-size="10" fill="#f59e0b" text-anchor="middle" font-weight="700">MESSAGE BROKER
+                — APACHE KAFKA</text>
+              <text x="380" y="403" font-size="8" fill="rgba(245,158,11,0.5)" text-anchor="middle">Event Streaming ·
+                Pub/Sub · Async Decoupling · High Throughput</text>
+
+              <!-- arrows kafka -> data -->
+              <line x1="280" y1="416" x2="150" y2="476" stroke="rgba(255,255,255,0.1)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a0)" />
+              <line x1="340" y1="416" x2="310" y2="476" stroke="rgba(255,255,255,0.1)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a0)" />
+              <line x1="400" y1="416" x2="470" y2="476" stroke="rgba(255,255,255,0.1)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a0)" />
+              <line x1="450" y1="416" x2="620" y2="476" stroke="rgba(255,255,255,0.1)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a0)" />
+
+              <!-- IoT layer -->
+              <rect x="80" y="476" width="150" height="42" rx="6" fill="#1c1c21" stroke="rgba(255,255,255,0.09)"
+                stroke-width="1" />
+              <text x="155" y="494" font-size="9" fill="rgba(255,255,255,0.45)" text-anchor="middle">IOT DEVICES</text>
+              <text x="155" y="507" font-size="8" fill="rgba(255,255,255,0.25)" text-anchor="middle">💡 ❄️ 📷 🌡 ·
+                MQTT</text>
+
+              <rect x="240" y="476" width="150" height="42" rx="6" fill="#1c1c21" stroke="rgba(255,255,255,0.09)"
+                stroke-width="1" />
+              <text x="315" y="494" font-size="9" fill="rgba(255,255,255,0.45)" text-anchor="middle">POSTGRESQL</text>
+              <text x="315" y="507" font-size="8" fill="rgba(255,255,255,0.25)" text-anchor="middle">User · Device ·
+                Rule DB</text>
+
+              <rect x="400" y="476" width="150" height="42" rx="6" fill="#1c1c21" stroke="rgba(255,255,255,0.09)"
+                stroke-width="1" />
+              <text x="475" y="494" font-size="9" fill="rgba(255,255,255,0.45)" text-anchor="middle">INFLUXDB</text>
+              <text x="475" y="507" font-size="8" fill="rgba(255,255,255,0.25)" text-anchor="middle">Sensor
+                Time-series</text>
+
+              <rect x="560" y="476" width="150" height="42" rx="6" fill="#1c1c21" stroke="rgba(255,255,255,0.09)"
+                stroke-width="1" />
+              <text x="635" y="494" font-size="9" fill="rgba(255,255,255,0.45)" text-anchor="middle">REDIS CACHE</text>
+              <text x="635" y="507" font-size="8" fill="rgba(255,255,255,0.25)" text-anchor="middle">Session · Token
+                Store</text>
+
+              <!-- IoT <-> Device Service -->
+              <path d="M155,476 Q180,380 230,286" stroke="rgba(34,211,160,0.2)" stroke-width="1" stroke-dasharray="3,3"
+                fill="none" marker-end="url(#a1)" />
+
+              <!-- Legend -->
+              <text x="660" y="140" font-size="8" fill="rgba(255,255,255,0.3)" font-weight="600">GIAO THỨC</text>
+              <line x1="660" y1="152" x2="680" y2="152" stroke="#22d3a0" stroke-width="1.5" marker-end="url(#a1)" />
+              <text x="684" y="156" font-size="8" fill="#22d3a0">HTTPS/REST</text>
+              <line x1="660" y1="168" x2="680" y2="168" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3,3"
+                marker-end="url(#a2)" />
+              <text x="684" y="172" font-size="8" fill="#f59e0b">Kafka Event</text>
+              <line x1="660" y1="184" x2="680" y2="184" stroke="rgba(255,255,255,0.15)" stroke-width="1"
+                stroke-dasharray="3,3" marker-end="url(#a0)" />
+              <text x="684" y="188" font-size="8" fill="rgba(255,255,255,0.35)">MQTT/DB</text>
+            </svg>
+          </div>
+
+          <!-- Spec tables -->
+          <div class="two-col">
+            <div class="card">
+              <div class="sec-title" style="margin-bottom:10px;">Đặc tả thành phần chính</div>
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Công nghệ</th>
+                    <th>Vai trò</th>
+                  </tr>
+                </thead>
+                <tbody id="comp-spec"></tbody>
+              </table>
+            </div>
+            <div class="card">
+              <div class="sec-title" style="margin-bottom:10px;">Giao thức giao tiếp</div>
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>Giao thức</th>
+                    <th>Dùng cho</th>
+                    <th>Bảo mật</th>
+                  </tr>
+                </thead>
+                <tbody id="proto-spec"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════ API SPEC ══════════════════ -->
+        <div class="page" id="page-apispec">
+          <div class="sec-hd" style="margin-bottom:14px;">
+            <div class="sec-title">Câu 2 — Đặc tả API & Non-Functional Requirements</div>
+          </div>
+
+          <div class="card gap">
+            <div class="sec-title" style="margin-bottom:10px;">Đặc tả API giữa các Service</div>
+            <table class="tbl" id="api-tbl">
+              <thead>
+                <tr>
+                  <th>Endpoint</th>
+                  <th>Method</th>
+                  <th>Service</th>
+                  <th>Mô tả</th>
+                  <th>Auth</th>
+                </tr>
+              </thead>
+              <tbody id="api-body"></tbody>
+            </table>
+          </div>
+
+          <div class="card gap">
+            <div class="sec-title" style="margin-bottom:10px;">Kafka Event Schema</div>
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Topic</th>
+                  <th>Publisher</th>
+                  <th>Subscriber</th>
+                  <th>Payload</th>
+                </tr>
+              </thead>
+              <tbody id="kafka-tbl"></tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="sec-title" style="margin-bottom:10px;">Non-Functional Requirements (NFR)</div>
+            <div class="three-col" id="nfr-cards"></div>
+          </div>
+        </div>
+
+        <!-- ══════════════════ TESTING ══════════════════ -->
+        <div class="page" id="page-testing">
+          <div class="sec-hd" style="margin-bottom:14px;">
+            <div class="sec-title">Câu 5 — Thử nghiệm & Khuyến nghị triển khai</div>
+          </div>
+
+          <div class="card gap">
+            <div class="sec-title" style="margin-bottom:10px;">Kết quả thử nghiệm theo tầng</div>
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Loại test</th>
+                  <th>Phạm vi</th>
+                  <th>Công cụ</th>
+                  <th>Kết quả kỳ vọng</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="test-tbl"></tbody>
+            </table>
+          </div>
+
+          <div class="two-col gap">
+            <div class="card">
+              <div class="sec-title" style="margin-bottom:10px;">Kết quả Load Test (mô phỏng)</div>
+              <div id="load-metrics"></div>
+            </div>
+            <div class="card">
+              <div class="sec-title" style="margin-bottom:10px;">Kết quả Security Test</div>
+              <div id="sec-test"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="sec-title" style="margin-bottom:10px;">Khuyến nghị triển khai thực tế</div>
+            <div class="three-col" id="recommendations"></div>
+          </div>
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /main -->
+  </div><!-- /shell -->
+
+  <!-- MODAL -->
+  <div class="overlay hidden" id="modal">
+    <div class="mbox">
+      <div class="mtitle" id="mtitle">Thêm thiết bị</div>
+      <div class="mfield">
+        <div class="mlabel">Tên thiết bị</div><input type="text" id="mn" placeholder="VD: Đèn phòng giám đốc">
+      </div>
+      <div class="mfield">
+        <div class="mlabel">Loại</div>
+        <select id="mt">
+          <option value="light">Đèn (Light)</option>
+          <option value="ac">Điều hòa (AC)</option>
+          <option value="camera">Camera</option>
+          <option value="sensor">Cảm biến</option>
+        </select>
+      </div>
+      <div class="mfield">
+        <div class="mlabel">Vị trí</div><input type="text" id="ml" placeholder="VD: Phòng giám đốc">
+      </div>
+      <div class="mbtns"><button class="btn" onclick="closeModal()">Hủy</button><button class="btn btn-primary"
+          onclick="confirmAdd()">Thêm thiết bị</button></div>
+    </div>
+  </div>
+
+  <div class="toastwrap" id="toastwrap"></div>
+
+  <script>
+    // ─── DATA ───────────────────────────────────────────────
+    const DEVS = [
+      { id: 1, nm: 'Đèn phòng họp A', type: 'light', loc: 'Phòng họp A', on: true },
+      { id: 2, nm: 'Điều hòa tầng 5', type: 'ac', loc: 'Khu làm việc', on: false, temp: 25 },
+      { id: 3, nm: 'Camera cửa chính', type: 'camera', loc: 'Cửa chính', on: true },
+      { id: 4, nm: 'Đèn hành lang', type: 'light', loc: 'Hành lang', on: true },
+      { id: 5, nm: 'Điều hòa phòng họp', type: 'ac', loc: 'Phòng họp A', on: true, temp: 22 },
+      { id: 6, nm: 'Camera bãi đỗ xe', type: 'camera', loc: 'Bãi đỗ xe', on: true },
+      { id: 7, nm: 'Cảm biến nhiệt độ', type: 'sensor', loc: 'Khu làm việc', on: true, temp: 27 },
+      { id: 8, nm: 'Đèn khu bếp', type: 'light', loc: 'Khu bếp', on: false },
+    ];
+    const DMETA = {
+      light: { ico: '💡', lbl: 'Đèn', c: 'var(--warn)' },
+      ac: { ico: '❄️', lbl: 'Điều hòa', c: 'var(--info)' },
+      camera: { ico: '📷', lbl: 'Camera', c: 'var(--purple)' },
+      sensor: { ico: '🌡', lbl: 'Cảm biến', c: 'var(--accent)' },
+    };
+    const RULES = [
+      { ico: '🌡', nm: 'Tự động bật điều hòa', desc: 'Nếu nhiệt độ > 29°C → bật điều hòa + gửi thông báo đến điện thoại', trig: 'IF temp > 29 THEN ac.on = true', on: true, c: 'var(--warn)' },
+      { ico: '🌙', nm: 'Tắt đèn buổi tối', desc: 'Sau 20:00 và không có người trong văn phòng → tắt toàn bộ đèn', trig: 'IF time ≥ 20:00 AND no_motion THEN lights.off', on: true, c: 'var(--info)' },
+      { ico: '🚨', nm: 'Cảnh báo cửa bất thường', desc: 'Nếu cửa chính mở sau 22:00 → gửi cảnh báo khẩn đến admin', trig: 'IF door.open AND time > 22:00 THEN alert(admin)', on: true, c: 'var(--danger)' },
+      { ico: '☀️', nm: 'Bật đèn buổi sáng', desc: '7:00 sáng các ngày trong tuần → bật đèn khu làm việc tự động', trig: 'IF time = 07:00 AND is_weekday THEN lights.on', on: false, c: 'var(--accent)' },
+    ];
+    const NOTIFS = [
+      { t: 'danger', title: 'Nhiệt độ vượt ngưỡng!', body: 'Khu làm việc: 31°C — đã tự động bật điều hòa tầng 5', time: '2 phút trước', svc: 'Monitoring + Automation' },
+      { t: 'danger', title: 'Cửa chính mở bất thường', body: 'Camera phát hiện chuyển động lúc 23:14, chưa xác thực', time: '1 giờ trước', svc: 'Camera + Notification' },
+      { t: 'warn', title: 'Điều hòa phòng họp chạy liên tục', body: 'Thiết bị hoạt động liên tục > 6 giờ, khuyến nghị kiểm tra', time: '3 giờ trước', svc: 'Device Service' },
+      { t: 'info', title: 'Kịch bản buổi tối đã chạy', body: 'Đã tắt 4 đèn hành lang và khu làm việc lúc 20:00', time: 'Hôm qua 20:02', svc: 'Automation' },
+      { t: 'ok', title: 'Camera bãi đỗ xe online', body: 'Kết nối thành công sau bảo trì định kỳ', time: 'Hôm qua 08:15', svc: 'Device Service' },
+    ];
+    const USERS = [
+      { nm: 'Nguyễn Văn An', email: 'an.nguyen@office.com', role: 'admin', ini: 'NA', c: '#1e1840', tc: '#8b5cf6' },
+      { nm: 'Trần Thị Bình', email: 'binh.tran@office.com', role: 'manager', ini: 'TB', c: '#0f1f40', tc: '#3b82f6' },
+      { nm: 'Lê Minh Châu', email: 'chau.le@office.com', role: 'staff', ini: 'MC', c: '#0d2620', tc: '#22d3a0' },
+      { nm: 'Phạm Quốc Dũng', email: 'dung.pham@office.com', role: 'staff', ini: 'QD', c: '#261e0a', tc: '#f59e0b' },
+    ];
+    const PERMS = [
+      ['Xem danh sách thiết bị', true, true, true],
+      ['Điều khiển thiết bị', true, true, false],
+      ['Thêm / Xóa thiết bị', true, false, false],
+      ['Cài đặt kịch bản tự động', true, true, false],
+      ['Xem thông báo', true, true, true],
+      ['Quản lý phân quyền', true, false, false],
+      ['Xem báo cáo phân tích', true, true, false],
+      ['Xuất dữ liệu', true, false, false],
+    ];
+    const SENSORS = [
+      { id: 't1', lbl: 'Nhiệt độ khu làm việc', unit: '°C', val: 27, min: 15, max: 40, c: '#f59e0b', hist: [24, 25, 25, 26, 27, 27, 28, 27] },
+      { id: 't2', lbl: 'Nhiệt độ phòng họp A', unit: '°C', val: 28, min: 15, max: 40, c: '#ef4444', hist: [22, 23, 25, 26, 27, 28, 28, 28] },
+      { id: 'h1', lbl: 'Độ ẩm', unit: '%', val: 65, min: 0, max: 100, c: '#3b82f6', hist: [60, 62, 63, 64, 65, 65, 66, 65] },
+      { id: 'l1', lbl: 'Mức sáng hành lang', unit: 'lux', val: 78, min: 0, max: 100, c: '#22d3a0', hist: [0, 0, 70, 75, 78, 80, 78, 78] },
+    ];
+    let nextId = 9, curPage = 'dashboard';
+
+    // ─── NAVIGATION ────────────────────────────────────────
+    const PAGE_META = {
+      dashboard: { title: 'Dashboard', badge: 'Tổng quan', btn: '' },
+      devices: { title: 'Device Service', badge: 'Quản lý thiết bị', btn: '＋ Thêm thiết bị' },
+      automation: { title: 'Automation Service', badge: 'Kịch bản tự động', btn: '' },
+      monitoring: { title: 'Monitoring Service', badge: 'Dữ liệu thời gian thực', btn: '' },
+      notifications: { title: 'Notification Service', badge: 'Nhật ký cảnh báo', btn: '' },
+      permissions: { title: 'Auth & Phân quyền', badge: 'JWT + RBAC', btn: '' },
+      security: { title: 'Bảo mật hệ thống', badge: 'Câu 4', btn: '' },
+      architecture: { title: 'Sơ đồ kiến trúc', badge: 'Câu 2', btn: '' },
+      apispec: { title: 'Đặc tả API', badge: 'Câu 2 — NFR', btn: '' },
+      testing: { title: 'Thử nghiệm & Khuyến nghị', badge: 'Câu 5', btn: '' },
+    };
+    document.querySelectorAll('.nav-item[data-page]').forEach(el => {
+      el.addEventListener('click', () => {
+        const p = el.dataset.page;
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('page-' + p).classList.add('active');
+        curPage = p;
+        const m = PAGE_META[p] || { title: p, badge: '', btn: '' };
+        document.getElementById('ptitle').textContent = m.title;
+        document.getElementById('pbadge').textContent = m.badge;
+        const b = document.getElementById('main-btn');
+        b.style.display = m.btn ? '' : 'none';
+        b.textContent = m.btn;
+      });
+    });
+    function mainAction() { if (curPage === 'devices') openModal(); }
+    function refreshAll() { tickSensors(); toast('Dữ liệu đã làm mới', 'ok'); }
+
+    // ─── CLOCK ──────────────────────────────────────────────
+    function tick() {
+      const n = new Date();
+      document.getElementById('clock').textContent = n.toTimeString().slice(0, 8);
+      document.getElementById('ddate').textContent = n.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase();
+    }
+    setInterval(tick, 1000); tick();
+
+    // ─── TOAST ──────────────────────────────────────────────
+    function toast(msg, type = 'info') {
+      const cols = { info: 'var(--info)', ok: 'var(--accent)', warn: 'var(--warn)', danger: 'var(--danger)' };
+      const icos = { info: 'ℹ', ok: '✓', warn: '⚠', danger: '⚡' };
+      const w = document.getElementById('toastwrap');
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.innerHTML = `<span style="color:${cols[type]};font-size:13px;">${icos[type]}</span>${msg}`;
+      w.appendChild(el);
+      setTimeout(() => { el.classList.add('tout'); setTimeout(() => el.remove(), 300); }, 3000);
+    }
+
+    // ─── STATS ───────────────────────────────────────────────
+    function updateStats() {
+      document.getElementById('s-online').textContent = DEVS.filter(d => d.on).length;
+      const avg = Math.round(SENSORS.filter(s => s.unit === '°C').reduce((a, s) => a + s.val, 0) / SENSORS.filter(s => s.unit === '°C').length);
+      document.getElementById('s-temp').textContent = avg + '°C';
+      document.getElementById('s-rules').textContent = RULES.filter(r => r.on).length;
+    }
+
+    // ─── DASHBOARD ───────────────────────────────────────────
+    function renderDash() {
+      document.getElementById('dash-devs').innerHTML = DEVS.slice(0, 5).map(d => {
+        const m = DMETA[d.type];
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;cursor:pointer;" onclick="quickTog(${d.id})">
+      <span style="font-size:16px;">${m.ico}</span>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${d.nm}</div><div style="font-size:10px;font-family:var(--mono);color:var(--text3);">${d.loc}</div></div>
+      <span class="tag ${d.on ? 'ton' : 'toff'}">${d.on ? 'BẬT' : 'TẮT'}</span>
+    </div>`;
+      }).join('');
+
+      const dotC = { danger: 'var(--danger)', warn: 'var(--warn)', info: 'var(--info)', ok: 'var(--accent)' };
+      document.getElementById('dash-notifs').innerHTML = NOTIFS.slice(0, 3).map(n =>
+        `<div class="nitem"><div class="ndot" style="background:${dotC[n.t]};"></div>
+    <div><div class="ntitle">${n.title}</div><div class="ntime">${n.time}</div></div></div>`
+      ).join('');
+    }
+    function quickTog(id) {
+      const d = DEVS.find(x => x.id === id); d.on = !d.on;
+      renderDash(); updateStats();
+      toast(`${d.nm}: ${d.on ? 'Đã bật' : 'Đã tắt'}`, d.on ? 'ok' : 'warn');
+    }
+
+    // ─── SIMULATION ──────────────────────────────────────────
+    const SIMSTEPS = [
+      { svc: 'Monitoring Service', c: '#3b82f6', desc: 'Cảm biến nhiệt độ ghi nhận vượt ngưỡng → phát event <code>temperature.alert</code> lên Apache Kafka topic' },
+      { svc: 'Automation Service', c: '#f59e0b', desc: 'Subscribe Kafka topic → so sánh với rule <code>IF temp > 29°C</code> → điều kiện khớp → kích hoạt action chain' },
+      { svc: 'Device Service', c: '#22d3a0', desc: 'Nhận lệnh từ Automation → gửi lệnh <code>MQTT PUBLISH</code> đến điều hòa → thiết bị phản hồi <code>ACK</code>' },
+      { svc: 'Notification Service', c: '#ef4444', desc: 'Nhận event từ Automation → Firebase FCM → push notification đến mobile app người dùng' },
+    ];
+    function runSim(v) {
+      document.getElementById('stv').textContent = v + '°C';
+      document.getElementById('stv').style.color = v > 29 ? 'var(--danger)' : v > 26 ? 'var(--warn)' : 'var(--accent)';
+      const active = v > 29;
+      document.getElementById('simflow').innerHTML = SIMSTEPS.map((s, i) =>
+        `<div class="simstep ${active ? '' : 'dim'}">
+      <div class="simnum" style="${active ? `background:${s.c}18;color:${s.c};box-shadow:0 0 0 2px ${s.c}20` : ''}">${i + 1}</div>
+      <div class="simbody">
+        <div class="simsvc" style="${active ? `color:${s.c}` : ''}">${s.svc}</div>
+        <div class="simdesc">${active ? s.desc : '<span style="color:var(--text3)">Chờ kích hoạt…</span>'}</div>
+      </div>
+    </div>`
+      ).join('');
+      if (active) {
+        const ac = DEVS.find(d => d.id === 2);
+        if (!ac.on) { ac.on = true; renderDash(); updateStats(); toast(`Kịch bản kích hoạt! Điều hòa bật tự động (${v}°C)`, 'danger'); }
+      }
+    }
+
+    // ─── DEVICES ─────────────────────────────────────────────
+    function renderDevices() {
+      const f = document.getElementById('dev-filter').value;
+      const list = f ? DEVS.filter(d => d.type === f) : DEVS;
+      document.getElementById('dev-count').textContent = `${list.length} thiết bị`;
+      document.getElementById('devgrid').innerHTML = list.map(d => {
+        const m = DMETA[d.type];
+        return `<div class="dcard ${d.on ? 'on' : ''}">
+      <div class="dcard-top">
+        <div><div class="dcard-ico">${m.ico}</div><div class="dcard-nm">${d.nm}</div><div class="dcard-loc">${d.loc}</div></div>
+        <button class="tog ${d.on ? 'on' : 'off'}" onclick="togDev(${d.id})"></button>
+      </div>
+      <div class="dcard-bot">
+        <div class="dcard-val" style="color:${d.on ? m.c : 'var(--text3)'};">${d.temp !== undefined ? d.temp + '°C' : m.lbl}</div>
+        <span class="tag ${d.on ? 'ton' : 'toff'}">${d.on ? 'ONLINE' : 'OFFLINE'}</span>
+      </div>
+    </div>`;
+      }).join('');
+    }
+    function togDev(id) {
+      const d = DEVS.find(x => x.id === id); d.on = !d.on;
+      renderDevices(); updateStats(); renderDash();
+      toast(`${d.nm}: ${d.on ? 'Đã bật' : 'Đã tắt'}`, d.on ? 'ok' : 'warn');
+    }
+    function openModal() { document.getElementById('modal').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+    function confirmAdd() {
+      const n = document.getElementById('mn').value.trim();
+      if (!n) { toast('Vui lòng nhập tên thiết bị', 'warn'); return; }
+      DEVS.push({ id: nextId++, nm: n, type: document.getElementById('mt').value, loc: document.getElementById('ml').value || 'Chưa phân loại', on: false });
+      closeModal(); renderDevices(); updateStats();
+      toast(`Đã thêm: ${n}`, 'ok');
+      document.getElementById('mn').value = ''; document.getElementById('ml').value = '';
+    }
+    document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+
+    // ─── AUTOMATION ─────────────────────────────────────────
+    function renderRules() {
+      document.getElementById('rulelist').innerHTML = RULES.map((r, i) =>
+        `<div class="rcard ${r.on ? 'ron' : ''}">
+      <div class="rico" style="background:${r.c}18;font-size:18px;">${r.ico}</div>
+      <div style="flex:1;">
+        <div class="rnm">${r.nm}</div>
+        <div class="rdesc">${r.desc}</div>
+        <span class="rtrig" style="background:${r.c}15;color:${r.c};">${r.trig}</span>
+      </div>
+      <button class="tog ${r.on ? 'on' : 'off'}" onclick="togRule(${i})"></button>
+    </div>`
+      ).join('');
+
+      // Flow diagram
+      const steps = ['Cảm biến IoT', 'Monitoring Service', 'Kafka Event', 'Automation Service', 'Device Service / Notification'];
+      document.getElementById('flow-diagram').innerHTML = steps.map((s, i) =>
+        `${i > 0 ? `<div style="font-size:16px;color:var(--text3);padding:0 4px;">→</div>` : ''}
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:8px 12px;font-size:11px;font-family:var(--mono);color:var(--accent);">${s}</div>`
+      ).join('');
+    }
+    function togRule(i) { RULES[i].on = !RULES[i].on; renderRules(); updateStats(); toast(`Kịch bản "${RULES[i].nm}": ${RULES[i].on ? 'Bật' : 'Tắt'}`, RULES[i].on ? 'ok' : 'warn'); }
+
+    // ─── MONITORING ──────────────────────────────────────────
+    function renderMonitor() {
+      document.getElementById('mgrid').innerHTML = SENSORS.map(s => {
+        const pct = Math.round((s.val - s.min) / (s.max - s.min) * 100);
+        const warn = s.unit === '°C' && s.val > 29;
+        const sp = s.hist.map(v => {
+          const h = Math.max(3, Math.round((v - s.min) / (s.max - s.min) * 26));
+          return `<div class="spk" style="height:${h}px;background:${s.c};flex:1;opacity:0.65;"></div>`;
+        }).join('');
+        return `<div class="mcard">
+      <div style="display:flex;justify-content:space-between;"><div class="mcard-lbl">${s.lbl}</div><div class="live-badge"><span class="blink"></span>LIVE</div></div>
+      <div class="mcard-val" style="color:${warn ? 'var(--danger)' : s.c};">${typeof s.val === 'number' ? s.val.toFixed(1) : s.val}<span style="font-size:14px;color:var(--text3);">${s.unit}</span></div>
+      ${warn ? `<span class="tag tdanger" style="margin-bottom:6px;">⚠ VƯỢT NGƯỠNG</span>` : ''}
+      <div class="mbar"><div class="mfill" style="width:${pct}%;background:${s.c};"></div></div>
+      <div class="mbot"><span class="msub">${s.min}–${s.max}${s.unit}</span><span class="msub">${pct}%</span></div>
+      <div class="spark">${sp}</div>
+    </div>`;
+      }).join('');
+    }
+    function tickSensors() {
+      SENSORS.forEach(s => {
+        const d = (Math.random() - 0.48) * 0.7;
+        s.val = Math.max(s.min, Math.min(s.max, +(s.val + d).toFixed(1)));
+        s.hist.push(s.val); if (s.hist.length > 8) s.hist.shift();
+      });
+      if (curPage === 'monitoring') renderMonitor();
+      const avg = Math.round(SENSORS.filter(s => s.unit === '°C').reduce((a, s) => a + s.val, 0) / SENSORS.filter(s => s.unit === '°C').length);
+      document.getElementById('s-temp').textContent = avg + '°C';
+    }
+    setInterval(tickSensors, 2500);
+
+    // ─── NOTIFICATIONS ───────────────────────────────────────
+    function renderNotifs() {
+      const dc = { danger: 'var(--danger)', warn: 'var(--warn)', info: 'var(--info)', ok: 'var(--accent)' };
+      const ts = { danger: 'background:var(--ddim);color:var(--danger)', warn: 'background:var(--wdim);color:var(--warn)', info: 'background:var(--idim);color:var(--info)', ok: 'background:var(--adim);color:var(--accent)' };
+      document.getElementById('nlist').innerHTML = NOTIFS.map(n =>
+        `<div class="nitem"><div class="ndot" style="background:${dc[n.t]};"></div>
+    <div style="flex:1;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <div class="ntitle">${n.title}</div>
+        <span class="nsvc" style="${ts[n.t]}">${n.svc}</span>
+      </div>
+      <div class="nbody">${n.body}</div>
+      <div class="ntime">${n.time}</div>
+    </div></div>`
+      ).join('');
+    }
+    function clearNotifs() { document.getElementById('nbadge').textContent = '0'; toast('Đã đánh dấu tất cả đã đọc', 'ok'); }
+
+    // ─── PERMISSIONS ─────────────────────────────────────────
+    function renderPerms() {
+      const rl = { admin: 'Admin', manager: 'Manager', staff: 'Nhân viên' };
+      const rs = { admin: `background:var(--pdim);color:var(--purple)`, manager: `background:var(--idim);color:var(--info)`, staff: `background:var(--bg4);color:var(--text3)` };
+      document.getElementById('ulist').innerHTML = USERS.map(u =>
+        `<div class="ucard"><div class="uavatar" style="background:${u.c};color:${u.tc};">${u.ini}</div>
+    <div><div class="unm">${u.nm}</div><div class="uemail">${u.email}</div></div>
+    <span class="urole" style="${rs[u.role]}">${rl[u.role]}</span></div>`
+      ).join('');
+
+      const check = (v) => v ? `<span class="check">✓</span>` : `<span class="cross">—</span>`;
+      document.getElementById('perm-tbl').innerHTML = PERMS.map(p =>
+        `<tr><td>${p[0]}</td><td style="text-align:center;">${check(p[1])}</td><td style="text-align:center;">${check(p[2])}</td><td style="text-align:center;">${check(p[3])}</td></tr>`
+      ).join('');
+
+      // JWT flow
+      const jsteps = [
+        { n: '1', lbl: 'Client', desc: 'Gửi credentials (username/password) đến Auth Service', c: 'var(--info)' },
+        { n: '2', lbl: 'Auth Service', desc: 'Xác thực → tạo JWT token (RS256, exp: 1h) + refresh token', c: 'var(--purple)' },
+        { n: '3', lbl: 'API Gateway', desc: 'Kiểm tra JWT signature + expiry trước mọi request', c: 'var(--accent)' },
+        { n: '4', lbl: 'Microservice', desc: 'Nhận request đã được xác thực, kiểm tra role permission', c: 'var(--warn)' },
+      ];
+      document.getElementById('jwt-flow').innerHTML = jsteps.map((s, i) =>
+        `<div style="display:flex;gap:10px;padding:8px 0;${i < jsteps.length - 1 ? 'border-bottom:1px solid var(--border)' : ''}">
+      <div style="width:22px;height:22px;border-radius:50%;background:${s.c}18;color:${s.c};font-size:10px;font-family:var(--mono);font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${s.n}</div>
+      <div><div style="font-size:11px;font-weight:600;color:${s.c};font-family:var(--mono);">${s.lbl}</div><div style="font-size:11px;color:var(--text2);margin-top:2px;">${s.desc}</div></div>
+    </div>`
+      ).join('');
+    }
+
+    // ─── SECURITY ────────────────────────────────────────────
+    function renderSecurity() {
+      const risks = [
+        { ico: '⚡', title: 'Chiếm quyền thiết bị', desc: 'Kẻ tấn công gửi lệnh trái phép đến IoT device qua MQTT', level: 'Cao', lc: 'var(--danger)' },
+        { ico: '🕵️', title: 'Đánh cắp dữ liệu', desc: 'Intercept traffic giữa client và server, đọc dữ liệu nhạy cảm', level: 'Cao', lc: 'var(--danger)' },
+        { ico: '🔑', title: 'Leo thang đặc quyền', desc: 'Người dùng thấp hơn truy cập chức năng của Admin/Manager', level: 'Trung bình', lc: 'var(--warn)' },
+        { ico: '💥', title: 'DoS / DDoS', desc: 'Tấn công làm ngập API Gateway, gây gián đoạn dịch vụ', level: 'Trung bình', lc: 'var(--warn)' },
+        { ico: '🦠', title: 'MQTT Broker tấn công', desc: 'Publish trái phép vào topic nhạy cảm điều khiển thiết bị', level: 'Cao', lc: 'var(--danger)' },
+        { ico: '📡', title: 'Replay Attack', desc: 'Chặn và phát lại request xác thực cũ để bypass security', level: 'Thấp', lc: 'var(--info)' },
+      ];
+      document.getElementById('risks').innerHTML = risks.map(r =>
+        `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <span style="font-size:16px;">${r.ico}</span>
+        <span style="font-size:12px;font-weight:600;">${r.title}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5;">${r.desc}</div>
+      <span class="tag" style="background:${r.lc}15;color:${r.lc};">MỨC: ${r.level}</span>
+    </div>`
+      ).join('');
+
+      const s1 = [
+        'API Gateway xác minh JWT signature (RS256) mọi request',
+        'Auth Service (Keycloak) cấp token, exp=1h + refresh token 7d',
+        'RBAC 3 cấp: Admin / Manager / Nhân viên — kiểm tra từng endpoint',
+        'Token blacklist lưu trong Redis khi user logout',
+        'Rate limiting: 100 req/min/IP tại Gateway',
+      ];
+      document.getElementById('sec1-steps').innerHTML = s1.map(s =>
+        `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
+      <span style="color:var(--accent);font-size:12px;flex-shrink:0;">✓</span>
+      <span style="font-size:12px;color:var(--text2);">${s}</span>
+    </div>`
+      ).join('');
+
+      const s2 = [
+        'HTTPS TLS 1.3 toàn bộ REST API — disable TLS 1.0/1.1',
+        'MQTT over TLS (port 8883) — mỗi thiết bị có X.509 certificate',
+        'Kafka SSL encryption + SASL/SCRAM xác thực producer/consumer',
+        'AES-256 mã hóa dữ liệu nhạy cảm lưu trong database',
+        'Certificate rotation tự động mỗi 90 ngày qua cert-manager',
+      ];
+      document.getElementById('sec2-steps').innerHTML = s2.map(s =>
+        `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
+      <span style="color:var(--info);font-size:12px;flex-shrink:0;">✓</span>
+      <span style="font-size:12px;color:var(--text2);">${s}</span>
+    </div>`
+      ).join('');
+
+      const matrix = [
+        ['Client Layer', 'Man-in-the-middle', 'HTTPS TLS 1.3', '✓'],
+        ['API Gateway', 'Brute force / DDoS', 'Rate limit + WAF', '✓'],
+        ['Auth Service', 'Token theft', 'JWT RS256 + short exp', '✓'],
+        ['IoT Devices', 'Chiếm quyền điều khiển', 'MQTT TLS + cert auth', '✓'],
+        ['Kafka Broker', 'Unauthorized publish', 'SASL/SCRAM + ACL', '✓'],
+        ['Database', 'SQL Injection / Data leak', 'Parameterized query + AES-256', '✓'],
+      ];
+      document.getElementById('sec-matrix').innerHTML = matrix.map(r =>
+        `<tr><td style="font-weight:500;color:var(--text);">${r[0]}</td><td class="mono-sm" style="color:var(--danger);">${r[1]}</td><td class="mono-sm" style="color:var(--text2);">${r[2]}</td><td style="color:var(--accent);text-align:center;">${r[3]}</td></tr>`
+      ).join('');
+    }
+
+    // ─── ARCHITECTURE ────────────────────────────────────────
+    function renderArch() {
+      const comps = [
+        ['API Gateway', 'Kong / Nginx', 'Routing, Rate limit, SSL'],
+        ['Auth Service', 'Keycloak', 'JWT, OAuth2, RBAC'],
+        ['Device Service', 'Node.js + MQTT', 'IoT CRUD, Control'],
+        ['Automation Svc', 'Python + Drools', 'Rule Engine, Trigger'],
+        ['Monitoring Svc', 'Go + InfluxDB', 'Time-series, Real-time'],
+        ['Notification Svc', 'Firebase FCM', 'Push, SMS, Email'],
+        ['Report Service', 'Python + PDF', 'Analytics, Export'],
+      ];
+      document.getElementById('comp-spec').innerHTML = comps.map(c =>
+        `<tr><td style="font-weight:500;color:var(--text);">${c[0]}</td><td class="mono-sm" style="color:var(--accent);">${c[1]}</td><td style="color:var(--text2);">${c[2]}</td></tr>`
+      ).join('');
+
+      const protos = [
+        ['HTTPS/REST', 'Client ↔ Gateway', 'TLS 1.3'],
+        ['gRPC', 'Service ↔ Service', 'mTLS'],
+        ['MQTT over TLS', 'IoT ↔ Device Svc', 'X.509 Cert'],
+        ['Kafka SSL', 'Services ↔ Broker', 'SASL/SCRAM'],
+        ['WebSocket', 'Real-time → Client', 'WSS'],
+      ];
+      document.getElementById('proto-spec').innerHTML = protos.map(p =>
+        `<tr><td class="mono-sm" style="color:var(--warn);">${p[0]}</td><td style="color:var(--text2);">${p[1]}</td><td class="mono-sm" style="color:var(--accent);">${p[2]}</td></tr>`
+      ).join('');
+    }
+
+    // ─── API SPEC ────────────────────────────────────────────
+    function renderApiSpec() {
+      const apis = [
+        ['GET /api/devices', 'GET', 'Device Svc', 'Lấy danh sách thiết bị', 'JWT Bearer'],
+        ['POST /api/devices', 'POST', 'Device Svc', 'Thêm thiết bị mới', 'JWT + Admin'],
+        ['PUT /api/devices/:id/control', 'PUT', 'Device Svc', 'Bật/tắt thiết bị', 'JWT + Manager'],
+        ['DELETE /api/devices/:id', 'DELETE', 'Device Svc', 'Xóa thiết bị', 'JWT + Admin'],
+        ['GET /api/sensors/realtime', 'GET', 'Monitoring Svc', 'Dữ liệu cảm biến real-time', 'JWT'],
+        ['POST /api/rules', 'POST', 'Automation Svc', 'Tạo kịch bản tự động', 'JWT + Manager'],
+        ['GET /api/rules', 'GET', 'Automation Svc', 'Danh sách kịch bản', 'JWT'],
+        ['POST /api/auth/login', 'POST', 'Auth Svc', 'Đăng nhập, nhận JWT', 'Public'],
+        ['POST /api/auth/refresh', 'POST', 'Auth Svc', 'Làm mới access token', 'Refresh Token'],
+        ['GET /api/notifications', 'GET', 'Notification Svc', 'Danh sách thông báo', 'JWT'],
+      ];
+      document.getElementById('api-body').innerHTML = apis.map(a =>
+        `<tr><td class="mono-sm" style="color:var(--accent);">${a[0]}</td>
+    <td><span class="tag ${a[1] === 'GET' ? 'tinfo' : a[1] === 'POST' ? 'ton' : a[1] === 'PUT' ? 'twarn' : 'tdanger'}">${a[1]}</span></td>
+    <td class="mono-sm" style="color:var(--text2);">${a[2]}</td>
+    <td style="color:var(--text2);">${a[3]}</td>
+    <td class="mono-sm" style="color:var(--purple);">${a[4]}</td></tr>`
+      ).join('');
+
+      const kafka = [
+        ['temperature.alert', 'Monitoring Svc', 'Automation Svc', '{deviceId, temp, timestamp, location}'],
+        ['device.control', 'Automation Svc', 'Device Svc', '{deviceId, action, params, triggeredBy}'],
+        ['notification.send', 'Automation Svc', 'Notification Svc', '{userId, type, title, body, channel}'],
+        ['door.event', 'Device Svc', 'Automation Svc', '{deviceId, state, timestamp, cameraId}'],
+        ['rule.triggered', 'Automation Svc', 'All', '{ruleId, condition, actions, timestamp}'],
+      ];
+      document.getElementById('kafka-tbl').innerHTML = kafka.map(k =>
+        `<tr><td class="mono-sm" style="color:var(--warn);">${k[0]}</td>
+    <td class="mono-sm" style="color:var(--info);">${k[1]}</td>
+    <td class="mono-sm" style="color:var(--accent);">${k[2]}</td>
+    <td class="mono-sm" style="color:var(--text3);font-size:10px;">${k[3]}</td></tr>`
+      ).join('');
+
+      const nfrs = [
+        { lbl: 'Độ trễ (Latency)', val: '< 200ms', sub: '95th percentile', c: 'var(--accent)' },
+        { lbl: 'Khả dụng (Availability)', val: '99.9%', sub: 'Uptime / tháng', c: 'var(--info)' },
+        { lbl: 'Thông lượng (Throughput)', val: '1000 req/s', sub: 'API Gateway', c: 'var(--warn)' },
+        { lbl: 'Thiết bị đồng thời', val: '500+', sub: 'IoT concurrent', c: 'var(--purple)' },
+        { lbl: 'Kafka Event/s', val: '10,000', sub: 'Peak throughput', c: 'var(--danger)' },
+        { lbl: 'Thời gian phục hồi', val: '< 30s', sub: 'Auto-heal K8s', c: 'var(--accent)' },
+      ];
+      document.getElementById('nfr-cards').innerHTML = nfrs.map(n =>
+        `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em;">${n.lbl}</div>
+      <div style="font-size:22px;font-weight:800;color:${n.c};font-family:var(--mono);letter-spacing:-0.02em;">${n.val}</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px;">${n.sub}</div>
+    </div>`
+      ).join('');
+    }
+
+    // ─── TESTING ─────────────────────────────────────────────
+    function renderTesting() {
+      const tests = [
+        ['Unit Test', 'Từng service riêng biệt', 'Jest, PyTest, Go Test', 'Coverage ≥ 80%', '✓ Pass'],
+        ['Integration Test', 'Luồng event Kafka end-to-end', 'Testcontainers, Postman', 'Không mất event', '✓ Pass'],
+        ['Load Test', '100 thiết bị đồng thời', 'k6, JMeter', 'Latency < 200ms', '✓ Pass'],
+        ['Stress Test', '500 req/s trong 30 phút', 'k6 ramping', 'Không crash, tự phục hồi', '⚠ Partial'],
+        ['Security Test', 'Penetration testing tại Gateway', 'OWASP ZAP, Burp Suite', 'Không có lỗ hổng Critical', '✓ Pass'],
+        ['Chaos Test', 'Kill ngẫu nhiên 1 service', 'Chaos Monkey', 'Circuit breaker hoạt động', '✓ Pass'],
+        ['End-to-End Test', 'Kịch bản nhiệt độ 29°C', 'Cypress, Playwright', 'Trigger < 2s', '✓ Pass'],
+      ];
+      const sc = { Pass: '✓ Pass', Partial: '⚠ Partial' };
+      document.getElementById('test-tbl').innerHTML = tests.map(t => {
+        const ok = t[4].includes('Pass') && !t[4].includes('Partial');
+        const warn = t[4].includes('Partial');
+        return `<tr><td style="font-weight:500;color:var(--text);">${t[0]}</td><td style="color:var(--text2);">${t[1]}</td>
+    <td class="mono-sm" style="color:var(--purple);">${t[2]}</td><td class="mono-sm" style="color:var(--text3);">${t[3]}</td>
+    <td><span class="tag ${ok ? 'ton' : warn ? 'twarn' : 'tdanger'}">${t[4]}</span></td></tr>`;
+      }).join('');
+
+      const lm = [
+        { lbl: 'Avg Response Time', val: '87ms', good: true },
+        { lbl: 'P95 Latency', val: '156ms', good: true },
+        { lbl: 'P99 Latency', val: '312ms', good: true },
+        { lbl: 'Error Rate', val: '0.02%', good: true },
+        { lbl: 'Max Throughput', val: '1,240 req/s', good: true },
+        { lbl: 'Memory Usage', val: '2.1 GB', good: true },
+      ];
+      document.getElementById('load-metrics').innerHTML = lm.map(m =>
+        `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;color:var(--text2);">${m.lbl}</span>
+      <span style="font-size:12px;font-family:var(--mono);font-weight:600;color:${m.good ? 'var(--accent)' : 'var(--danger)'};">${m.val}</span>
+    </div>`
+      ).join('');
+
+      const st = [
+        { test: 'SQL Injection', result: 'Blocked', ok: true },
+        { test: 'JWT Forgery', result: 'Rejected', ok: true },
+        { test: 'MQTT Unauthorized', result: 'Denied', ok: true },
+        { test: 'XSS Attack', result: 'Sanitized', ok: true },
+        { test: 'DoS (1000 req/s)', result: 'Rate limited', ok: true },
+        { test: 'Token Replay', result: 'Blacklisted', ok: true },
+      ];
+      document.getElementById('sec-test').innerHTML = st.map(s =>
+        `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;color:var(--text2);">${s.test}</span>
+      <span class="tag ${s.ok ? 'ton' : 'tdanger'}">${s.result}</span>
+    </div>`
+      ).join('');
+
+      const recs = [
+        { ico: '🐳', title: 'Containerization', desc: 'Docker + Kubernetes — scale từng service độc lập, zero-downtime deploy', c: 'var(--info)' },
+        { ico: '⚙️', title: 'CI/CD Pipeline', desc: 'GitLab CI/GitHub Actions — auto test + deploy mỗi microservice khi push code', c: 'var(--accent)' },
+        { ico: '📊', title: 'Observability', desc: 'Prometheus + Grafana + Loki — giám sát metrics, logs, traces toàn hệ thống', c: 'var(--warn)' },
+        { ico: '🔄', title: 'Circuit Breaker', desc: 'Resilience4j — ngăn cascade failure, tự phục hồi khi một service lỗi', c: 'var(--danger)' },
+        { ico: '🚀', title: 'Triển khai theo giai đoạn', desc: 'Phase 1: Monolith → Phase 2: Tách service → Phase 3: Full microservices', c: 'var(--purple)' },
+        { ico: '📋', title: 'Service Mesh', desc: 'Istio — traffic management, mutual TLS giữa services, service discovery', c: 'var(--pink)' },
+      ];
+      document.getElementById('recommendations').innerHTML = recs.map(r =>
+        `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:14px;">
+      <div style="font-size:20px;margin-bottom:6px;">${r.ico}</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${r.title}</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.6;">${r.desc}</div>
+    </div>`
+      ).join('');
+    }
+
+    // ─── INIT ────────────────────────────────────────────────
+    updateStats();
+    renderDash();
+    renderDevices();
+    renderRules();
+    renderMonitor();
+    renderNotifs();
+    renderPerms();
+    renderSecurity();
+    renderArch();
+    renderApiSpec();
+    renderTesting();
+    runSim(27);
+  </script>
+</body>
+
+</html>

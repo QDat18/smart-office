@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Office — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<style>
+:root {
+  --bg:#09090b; --bg2:#0f0f12; --bg3:#161619; --bg4:#1c1c21; --bg5:#242429;
+  --border:rgba(255,255,255,0.06); --border2:rgba(255,255,255,0.11); --border3:rgba(255,255,255,0.18);
+  --text:#eeeef0; --text2:#9090a0; --text3:#505060; --text4:#2a2a32;
+  --accent:#22d3a0; --accent2:#16a87e; --adim:rgba(34,211,160,0.10); --adim2:rgba(34,211,160,0.20);
+  --warn:#f59e0b; --wdim:rgba(245,158,11,0.10);
+  --danger:#ef4444; --ddim:rgba(239,68,68,0.10);
+  --info:#3b82f6; --idim:rgba(59,130,246,0.10);
+  --purple:#8b5cf6; --pdim:rgba(139,92,246,0.10);
+  --mono:'IBM Plex Mono',monospace; --sans:'Outfit',sans-serif;
+  --r:6px; --r2:10px; --r3:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;}
+::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:2px;}
+
+.shell{display:grid;grid-template-columns:220px 1fr;height:100vh;overflow:hidden;}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;}
+.main{overflow-y:auto;display:flex;flex-direction:column;}
+
+/* SIDEBAR */
+.brand{padding:20px 16px 16px;border-bottom:1px solid var(--border);}
+.brand-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.brand-icon{width:30px;height:30px;border-radius:8px;background:var(--adim2);border:1px solid rgba(34,211,160,0.3);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.brand-name{font-size:14px;font-weight:700;letter-spacing:-0.01em;}
+.brand-sub{font-size:9px;font-family:var(--mono);color:var(--text3);letter-spacing:0.06em;}
+.conn-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);padding:3px 9px;border-radius:20px;border:1px solid;transition:all 0.3s;}
+.conn-pill.online{color:var(--accent);background:var(--adim);border-color:rgba(34,211,160,0.2);}
+.conn-pill.offline{color:var(--text3);background:var(--bg4);border-color:var(--border);}
+.conn-pill.connecting{color:var(--warn);background:var(--wdim);border-color:rgba(245,158,11,0.2);}
+.blink{width:5px;height:5px;border-radius:50%;animation:blink 2s infinite;}
+.blink-g{background:var(--accent);}
+.blink-y{background:var(--warn);}
+.blink-r{background:var(--danger);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+.nav-sec{padding:12px 10px 4px;}
+.nav-lbl{font-size:9px;font-family:var(--mono);color:var(--text3);letter-spacing:0.14em;text-transform:uppercase;padding:0 8px;margin-bottom:4px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all 0.12s;border:1px solid transparent;}
+.nav-item:hover{color:var(--text);background:var(--bg3);}
+.nav-item.active{color:var(--accent);background:var(--adim);border-color:rgba(34,211,160,0.15);}
+
+.sb-footer{margin-top:auto;padding:14px 16px;border-top:1px solid var(--border);}
+.clock{font-family:var(--mono);font-size:18px;font-weight:300;letter-spacing:0.06em;}
+.dateline{font-size:9px;font-family:var(--mono);color:var(--text3);margin-top:2px;}
+
+/* TOPBAR */
+.topbar{padding:16px 24px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg);position:sticky;top:0;z-index:20;}
+.ptitle{font-size:19px;font-weight:700;letter-spacing:-0.02em;}
+.pbadge{font-size:9px;font-family:var(--mono);color:var(--text3);background:var(--bg3);border:1px solid var(--border2);padding:2px 7px;border-radius:4px;margin-left:10px;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.12s;}
+.btn:hover{background:var(--bg3);color:var(--text);}
+.btn-acc{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700;}
+.btn-acc:hover{background:var(--accent2);border-color:var(--accent2);}
+
+.content{padding:20px 24px 40px;}
+.page{display:none;} .page.active{display:block;animation:fi 0.2s ease;}
+@keyframes fi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+/* STAT GRID */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;position:relative;overflow:hidden;transition:border-color 0.2s;}
+.sc:hover{border-color:var(--border2);}
+.sc-top{height:2px;position:absolute;top:0;left:0;right:0;}
+.sc-lbl{font-size:9px;font-family:var(--mono);color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:5px;}
+.sc-val{font-size:24px;font-weight:800;letter-spacing:-0.03em;line-height:1;}
+.sc-sub{font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px;}
+
+/* TEMP DISPLAY — hero */
+.temp-hero{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:20px;margin-bottom:14px;position:relative;overflow:hidden;}
+.temp-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;opacity:0.06;transition:background 0.5s;}
+.temp-hero.normal::before{background:var(--accent);}
+.temp-hero.warm::before{background:var(--warn);}
+.temp-hero.hot::before{background:var(--danger);}
+.th-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.th-source{font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;}
+.th-badges{display:flex;gap:6px;flex-wrap:wrap;}
+.th-val{font-size:64px;font-weight:800;font-family:var(--mono);letter-spacing:-0.04em;line-height:1;transition:color 0.5s;}
+.th-val.normal{color:var(--accent);}
+.th-val.warm{color:var(--warn);}
+.th-val.hot{color:var(--danger);}
+.th-meta{font-size:12px;font-family:var(--mono);color:var(--text3);margin-top:6px;}
+.th-bar-wrap{margin-top:14px;}
+.th-bar{height:4px;background:var(--bg5);border-radius:2px;overflow:hidden;}
+.th-fill{height:100%;border-radius:2px;transition:width 0.6s,background 0.4s;}
+.th-marks{display:flex;justify-content:space-between;margin-top:4px;}
+.th-mark{font-size:9px;font-family:var(--mono);color:var(--text3);}
+.alert-banner{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r);margin-bottom:14px;font-size:12px;font-family:var(--mono);border:1px solid;animation:pulse-border 1.5s infinite;}
+.alert-banner.danger{background:var(--ddim);border-color:rgba(239,68,68,0.3);color:var(--danger);}
+.alert-banner.warn{background:var(--wdim);border-color:rgba(245,158,11,0.3);color:var(--warn);}
+.alert-banner.hidden{display:none;}
+@keyframes pulse-border{0%,100%{border-color:rgba(239,68,68,0.3)}50%{border-color:rgba(239,68,68,0.7)}}
+
+/* HISTORY CHART */
+.history-chart{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:14px;}
+.chart-area{height:80px;display:flex;align-items:flex-end;gap:3px;margin-top:10px;position:relative;}
+.chart-bar{flex:1;border-radius:2px 2px 0 0;transition:height 0.4s,background 0.3s;min-height:2px;cursor:pointer;position:relative;}
+.chart-bar:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border2);padding:2px 6px;border-radius:4px;font-size:9px;font-family:var(--mono);color:var(--text);white-space:nowrap;z-index:10;}
+.chart-grid{position:absolute;left:0;right:0;border-top:1px dashed var(--border);pointer-events:none;}
+
+/* DEVICES */
+.dev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.dcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:13px;transition:all 0.18s;}
+.dcard:hover{border-color:var(--border2);transform:translateY(-1px);}
+.dcard.on{border-color:rgba(34,211,160,0.22);}
+.dcard-ico{font-size:18px;margin-bottom:6px;}
+.dcard-nm{font-size:12px;font-weight:600;margin-bottom:2px;}
+.dcard-loc{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.dcard-bot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+.tog{width:34px;height:19px;border-radius:10px;border:none;cursor:pointer;position:relative;transition:background 0.2s;outline:none;}
+.tog.on{background:var(--accent);}
+.tog.off{background:var(--bg5);}
+.tog::after{content:'';position:absolute;width:13px;height:13px;background:#fff;border-radius:50%;top:3px;transition:left 0.2s;}
+.tog.on::after{left:18px;} .tog.off::after{left:3px;}
+.tag{display:inline-flex;align-items:center;font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:3px;font-weight:600;letter-spacing:0.04em;}
+.ton{background:var(--adim);color:var(--accent);}
+.toff{background:var(--bg4);color:var(--text3);}
+.twarn{background:var(--wdim);color:var(--warn);}
+.tdanger{background:var(--ddim);color:var(--danger);}
+.tinfo{background:var(--idim);color:var(--info);}
+.tlive{background:rgba(34,211,160,0.2);color:var(--accent);animation:tpulse 1.5s infinite;}
+@keyframes tpulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* NOTIF LOG */
+.nlog{display:flex;flex-direction:column;gap:0;}
+.nitem{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.nitem:last-child{border:none;}
+.ndot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.ntitle{font-size:13px;font-weight:600;}
+.nbody{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:2px;line-height:1.5;}
+.ntime{font-size:10px;font-family:var(--mono);color:var(--text4);margin-top:3px;}
+
+/* QR PANEL */
+.qr-panel{background:var(--bg2);border:1px solid var(--accent);border-radius:var(--r2);padding:18px;margin-bottom:14px;display:flex;align-items:center;gap:18px;}
+.qr-box{width:90px;height:90px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qr-info{flex:1;}
+.qr-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+.qr-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:8px;}
+
+/* TOAST */
+.toastwrap{position:fixed;bottom:16px;right:16px;display:flex;flex-direction:column;gap:6px;z-index:9999;}
+.toast{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:9px 13px;font-size:12px;font-family:var(--mono);color:var(--text);min-width:200px;display:flex;align-items:center;gap:7px;animation:ti 0.2s ease;}
+@keyframes ti{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+.toast.to{animation:to 0.25s ease forwards;}
+@keyframes to{to{opacity:0;transform:translateX(12px)}}
+
+/* SIMULATOR */
+.sim-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;}
+.sim-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:var(--bg5);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);cursor:pointer;transition:transform 0.15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
+
+/* UTILS */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.sec-title{font-size:9px;font-family:var(--mono);color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;}
+.gap{margin-bottom:14px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-row">
+      <div class="brand-icon">⬡</div>
+      <div><div class="brand-name">Smart Office</div><div class="brand-sub">DASHBOARD · PC</div></div>
+    </div>
+    <div class="conn-pill connecting" id="conn-pill">
+      <span class="blink blink-y" id="conn-dot"></span>
+      <span id="conn-text">Đang kết nối...</span>
+    </div>
+  </div>
+
+  <div class="nav-sec">
+    <div class="nav-lbl">Màn hình</div>
+    <div class="nav-item active" data-page="realtime">📡 Nhiệt độ thực tế</div>
+    <div class="nav-item" data-page="devices">⬡ Thiết bị</div>
+    <div class="nav-item" data-page="demo">🎛️ Demo & Mô phỏng</div>
+    <div class="nav-item" data-page="log">📋 Nhật ký sự kiện</div>
+    <div class="nav-item" data-page="connect">📱 Kết nối điện thoại</div>
+  </div>
+
+  <div class="sb-footer">
+    <div class="clock" id="clk">--:--:--</div>
+    <div class="dateline" id="ddate">--</div>
+    <div style="margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--text3);">
+      Điện thoại: <span id="mobile-last" style="color:var(--text2);">Chưa kết nối</span>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;">
+      <div class="ptitle" id="ptitle">Nhiệt độ thực tế</div>
+      <div class="pbadge" id="pbadge">Nhận từ điện thoại</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn" onclick="showConnectPage()">📱 Kết nối điện thoại</button>
+      <button class="btn btn-acc" onclick="sendTestAlert()">⚡ Test cảnh báo</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- ── REALTIME ── -->
+  <div class="page active" id="page-realtime">
+    <div id="alert-banner" class="alert-banner hidden danger">
+      ⚡ CẢNH BÁO: Nhiệt độ vượt ngưỡng 29°C — Kịch bản tự động đã kích hoạt!
+    </div>
+
+    <!-- TEMP HERO -->
+    <div class="temp-hero normal gap" id="temp-hero">
+      <div class="th-top">
+        <div>
+          <div class="th-source">Nguồn dữ liệu</div>
+          <div id="data-source" style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px;">Chờ điện thoại kết nối...</div>
+        </div>
+        <div class="th-badges">
+          <span class="tag" id="source-badge" style="background:var(--bg4);color:var(--text3);">OFFLINE</span>
+          <span class="tag tlive" id="live-badge" style="display:none;">● LIVE</span>
+        </div>
+      </div>
+      <div class="th-val normal" id="temp-big">--°C</div>
+      <div class="th-meta" id="temp-meta">Cập nhật lúc: --</div>
+      <div class="th-bar-wrap">
+        <div class="th-bar"><div class="th-fill" id="temp-fill" style="width:0%;background:var(--accent);"></div></div>
+        <div class="th-marks">
+          <span class="th-mark">15°C</span>
+          <span class="th-mark" style="color:var(--warn);">29°C ⚠</span>
+          <span class="th-mark" style="color:var(--danger);">35°C 🔴</span>
+          <span class="th-mark">40°C</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY CHART -->
+    <div class="history-chart gap">
+      <div class="sec-hd">
+        <div class="sec-title">Lịch sử nhiệt độ (30 điểm gần nhất)</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);" id="chart-range">--</div>
+      </div>
+      <div class="chart-area" id="chart-area">
+        <div style="width:100%;text-align:center;color:var(--text3);font-size:12px;font-family:var(--mono);padding-top:20px;">Chờ dữ liệu từ điện thoại...</div>
+      </div>
+    </div>
+
+    <!-- STAT GRID -->
+    <div class="stat-grid">
+      <div class="sc"><div class="sc-top" style="background:var(--accent)"></div>
+        <div class="sc-lbl">Hiện tại</div>
+        <div class="sc-val" style="color:var(--accent)" id="stat-cur">--°C</div>
+        <div class="sc-sub">Nhiệt độ phòng</div></div>
+      <div class="sc"><div class="sc-top" style="background:var(--info)"></div>
+        <div class="sc-lbl">Trung bình</div>
+        <div class="sc-val" style="color:var(--info)" id="stat-avg">--°C</div>
+        <div class="sc-sub">Phiên này</div></div>
+      <div class="sc"><div class="sc-top" style="background:var(--danger)"></div>
+        <div class="sc-lbl">Cao nhất</div>
+        <div class="sc-val" style="color:var(--danger)" id="stat-max">--°C</div>
+        <div class="sc-sub">Phiên này</div></div>
+      <div class="sc"><div class="sc-top" style="background:var(--purple)"></div>
+        <div class="sc-lbl">Điểm dữ liệu</div>
+        <div class="sc-val" style="color:var(--purple)" id="stat-count">0</div>
+        <div class="sc-sub">Từ điện thoại</div></div>
+    </div>
+
+    <!-- AUTOMATION STATUS -->
+    <div class="two-col">
+      <div class="card">
+        <div class="sec-hd"><div class="sec-title">Trạng thái kịch bản</div></div>
+        <div id="rule-status"></div>
+      </div>
+      <div class="card">
+        <div class="sec-hd"><div class="sec-title">Thiết bị được điều khiển tự động</div></div>
+        <div id="auto-devices"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DEVICES ── -->
+  <div class="page" id="page-devices">
+    <div class="sec-hd gap"><div class="sec-title">8 thiết bị văn phòng</div></div>
+    <div class="dev-grid" id="devgrid"></div>
+  </div>
+
+  <!-- ── DEMO ── -->
+  <div class="page" id="page-demo">
+    <div class="two-col gap">
+      <div class="sim-card">
+        <div class="sec-hd"><div class="sec-title">🎛 Demo — Nhập nhiệt độ tùy ý</div></div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Giả lập nhiệt độ bất kỳ để test kịch bản tự động</div>
+        <div class="sim-row">
+          <span style="font-size:12px;font-family:var(--mono);color:var(--text2);min-width:70px;">Nhiệt độ:</span>
+          <input type="range" min="15" max="40" value="27" step="0.5" id="demo-slider" oninput="updateDemo(+this.value)">
+          <span style="font-size:18px;font-weight:700;font-family:var(--mono);min-width:52px;" id="demo-val">27°C</span>
+        </div>
+        <button class="btn btn-acc" style="width:100%;" onclick="sendDemoTemp()">📤 Gửi lên hệ thống</button>
+        <div style="margin-top:12px;font-size:11px;font-family:var(--mono);color:var(--text3);">
+          Nguồn: <span style="color:var(--warn);">MANUAL DEMO</span> · Sẽ hiển thị trên tab Nhiệt độ thực tế
+        </div>
+      </div>
+      <div class="sim-card">
+        <div class="sec-hd"><div class="sec-title">🌤 Thời tiết thực tế (GPS)</div></div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Lấy nhiệt độ ngoài trời thật qua định vị trình duyệt</div>
+        <button class="btn" style="width:100%;margin-bottom:8px;" onclick="getWeather()">📍 Lấy nhiệt độ ngoài trời</button>
+        <div id="weather-result" style="font-size:12px;font-family:var(--mono);color:var(--text3);">Nhấn để lấy dữ liệu...</div>
+        <div style="margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--text3);">Nguồn: Open-Meteo API (miễn phí, không cần key)</div>
+      </div>
+    </div>
+
+    <!-- Kịch bản mô phỏng -->
+    <div class="card">
+      <div class="sec-hd"><div class="sec-title">▶ Mô phỏng luồng kịch bản theo Câu 3</div></div>
+      <div id="sim-flow" style="display:flex;flex-direction:column;gap:0;"></div>
+    </div>
+  </div>
+
+  <!-- ── LOG ── -->
+  <div class="page" id="page-log">
+    <div class="sec-hd gap">
+      <div class="sec-title">Nhật ký sự kiện thời gian thực</div>
+      <button class="btn" onclick="clearLog()">✕ Xóa log</button>
+    </div>
+    <div class="card" style="padding:0 14px;max-height:500px;overflow-y:auto;">
+      <div class="nlog" id="event-log"></div>
+    </div>
+  </div>
+
+  <!-- ── CONNECT ── -->
+  <div class="page" id="page-connect">
+    <div class="qr-panel">
+      <div class="qr-box" id="qr-container">
+        <canvas id="qr-canvas" width="80" height="80"></canvas>
+      </div>
+      <div class="qr-info">
+        <div class="qr-title">📱 Mở trên điện thoại</div>
+        <div class="qr-desc">Quét QR hoặc mở link dưới đây trên điện thoại để kết nối cảm biến thực tế với dashboard này.</div>
+        <div id="mobile-url" style="font-size:10px;font-family:var(--mono);color:var(--accent);word-break:break-all;"></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="sec-hd"><div class="sec-title">Hướng dẫn kết nối</div></div>
+        <div style="display:flex;flex-direction:column;gap:10px;" id="connect-steps"></div>
+      </div>
+      <div class="card">
+        <div class="sec-hd"><div class="sec-title">Khả năng đo lường</div></div>
+        <div id="sensor-caps"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="sec-hd"><div class="sec-title">Trạng thái kết nối Ably Realtime</div></div>
+      <div id="conn-status-detail"></div>
+    </div>
+  </div>
+
+  </div>
+</div>
+</div>
+
+<!-- TOAST -->
+<div class="toastwrap" id="tw"></div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────────────────
+const CHANNEL_ID = 'smart-office-' + (localStorage.getItem('so-room') || (() => {
+  const id = Math.random().toString(36).slice(2,8);
+  localStorage.setItem('so-room', id);
+  return id;
+})());
+const MOBILE_URL = window.location.href.replace('smart-office-dashboard.html','smart-office-mobile.html') + '?room=' + CHANNEL_ID.replace('smart-office-','');
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let tempHistory = [];
+let logEntries = [];
+let demoTemp = 27;
+let ablyConnected = false;
+let channel = null;
+let lastMobileTime = null;
+
+const DEVS = [
+  {id:1,nm:'Đèn phòng họp A',type:'light',loc:'Phòng họp A',on:true},
+  {id:2,nm:'Điều hòa tầng 5',type:'ac',loc:'Khu làm việc',on:false,temp:25},
+  {id:3,nm:'Camera cửa chính',type:'camera',loc:'Cửa chính',on:true},
+  {id:4,nm:'Đèn hành lang',type:'light',loc:'Hành lang',on:true},
+  {id:5,nm:'Điều hòa phòng họp',type:'ac',loc:'Phòng họp A',on:true,temp:22},
+  {id:6,nm:'Camera bãi đỗ xe',type:'camera',loc:'Bãi đỗ xe',on:true},
+  {id:7,nm:'Cảm biến nhiệt độ',type:'sensor',loc:'Khu làm việc',on:true,temp:27},
+  {id:8,nm:'Đèn khu bếp',type:'light',loc:'Khu bếp',on:false},
+];
+const DMETA={light:{ico:'💡',lbl:'Đèn'},ac:{ico:'❄️',lbl:'Điều hòa'},camera:{ico:'📷',lbl:'Camera'},sensor:{ico:'🌡',lbl:'Cảm biến'}};
+
+// ─── ABLY SETUP ────────────────────────────────────────────────────────────
+function initAbly() {
+  try {
+    // Using Ably demo key for prototype (limited but free, no signup)
+    const ably = new Ably.Realtime({
+      key: 'xVLyHw.NfDFIA:fDm3OmVBJjXBXJVgqGlX0iQxS5-0RXD3b-y3SVCIT0I',
+      clientId: 'dashboard-' + Date.now()
+    });
+
+    ably.connection.on('connected', () => {
+      setConnStatus('online', 'Đã kết nối Ably');
+      ablyConnected = true;
+      addLog('info', 'Dashboard kết nối Ably thành công', 'Ably Realtime');
+    });
+    ably.connection.on('disconnected', () => { setConnStatus('offline','Mất kết nối'); ablyConnected=false; });
+    ably.connection.on('connecting', () => setConnStatus('connecting','Đang kết nối...'));
+    ably.connection.on('failed', () => {
+      setConnStatus('offline','Kết nối thất bại — dùng chế độ demo');
+      addLog('warn','Không kết nối được Ably, hãy dùng tab Demo','System');
+    });
+
+    channel = ably.channels.get(CHANNEL_ID);
+    channel.subscribe('temperature', (msg) => {
+      const d = msg.data;
+      receiveTemp(d.value, d.source || 'Điện thoại', d.label || '');
+    });
+    channel.subscribe('device-control', (msg) => {
+      const d = msg.data;
+      const dev = DEVS.find(x=>x.id===d.deviceId);
+      if(dev){ dev.on=d.state; renderDevices(); addLog(d.state?'ok':'warn',`${dev.nm}: ${d.state?'Đã bật':'Đã tắt'}`,'Điện thoại'); }
+    });
+    channel.subscribe('ping', () => {
+      lastMobileTime = new Date();
+      document.getElementById('mobile-last').textContent = 'Vừa kết nối';
+      addLog('ok','Điện thoại đã kết nối vào hệ thống','Mobile');
+      toast('📱 Điện thoại đã kết nối!','ok');
+    });
+
+    updateConnDetail(ably);
+  } catch(e) {
+    setConnStatus('offline','Lỗi khởi tạo Ably');
+    console.error(e);
+  }
+}
+
+function setConnStatus(state, text) {
+  const pill = document.getElementById('conn-pill');
+  const dot = document.getElementById('conn-dot');
+  const txt = document.getElementById('conn-text');
+  pill.className = 'conn-pill ' + state;
+  dot.className = 'blink ' + (state==='online'?'blink-g':state==='connecting'?'blink-y':'blink-r');
+  txt.textContent = text;
+}
+
+// ─── RECEIVE TEMP ──────────────────────────────────────────────────────────
+function receiveTemp(val, source, label) {
+  val = parseFloat(val);
+  if(isNaN(val)) return;
+
+  const now = new Date();
+  tempHistory.push({val, time: now, source, label});
+  if(tempHistory.length > 30) tempHistory.shift();
+
+  // Update hero display
+  const hero = document.getElementById('temp-hero');
+  const big = document.getElementById('temp-big');
+  const fill = document.getElementById('temp-fill');
+  const cls = val > 32 ? 'hot' : val > 29 ? 'warm' : 'normal';
+  hero.className = 'temp-hero ' + cls + ' gap';
+  big.className = 'th-val ' + cls;
+  big.textContent = val.toFixed(1) + '°C';
+  document.getElementById('data-source').textContent = source + (label ? ' · ' + label : '');
+  document.getElementById('temp-meta').textContent = 'Cập nhật lúc: ' + now.toTimeString().slice(0,8);
+  const pct = Math.min(100, Math.max(0, (val-15)/(40-15)*100));
+  fill.style.width = pct + '%';
+  fill.style.background = val>29?'var(--danger)':val>26?'var(--warn)':'var(--accent)';
+
+  // Source badge
+  const sb = document.getElementById('source-badge');
+  sb.style.background = source.includes('Thời tiết') ? 'var(--idim)' : source.includes('Manual') || source.includes('Demo') ? 'var(--wdim)' : 'var(--adim)';
+  sb.style.color = source.includes('Thời tiết') ? 'var(--info)' : source.includes('Manual') || source.includes('Demo') ? 'var(--warn)' : 'var(--accent)';
+  sb.textContent = source.includes('Thời tiết') ? '🌤 THỜI TIẾT' : source.includes('Manual') || source.includes('Demo') ? '🎛 DEMO' : '📱 ĐIỆN THOẠI';
+  document.getElementById('live-badge').style.display = '';
+
+  // Stats
+  const vals = tempHistory.map(h=>h.val);
+  document.getElementById('stat-cur').textContent = val.toFixed(1)+'°C';
+  document.getElementById('stat-avg').textContent = (vals.reduce((a,v)=>a+v,0)/vals.length).toFixed(1)+'°C';
+  document.getElementById('stat-max').textContent = Math.max(...vals).toFixed(1)+'°C';
+  document.getElementById('stat-count').textContent = tempHistory.length;
+
+  renderChart();
+  checkRules(val, source);
+  updateMobileLast(now);
+
+  // Add to log
+  addLog(val>29?'danger':val>26?'warn':'info', `Nhiệt độ: ${val.toFixed(1)}°C từ ${source}`, 'Monitoring Service');
+}
+
+function updateMobileLast(t) {
+  lastMobileTime = t;
+  document.getElementById('mobile-last').textContent = t.toTimeString().slice(0,8);
+}
+
+// ─── CHART ────────────────────────────────────────────────────────────────
+function renderChart() {
+  const area = document.getElementById('chart-area');
+  if(!tempHistory.length) return;
+  const vals = tempHistory.map(h=>h.val);
+  const mn = 15, mx = 40, h = 76;
+  const bars = vals.map((v,i)=>{
+    const barH = Math.max(3, Math.round((v-mn)/(mx-mn)*h));
+    const c = v>29?'var(--danger)':v>26?'var(--warn)':'var(--accent)';
+    const t = tempHistory[i].time.toTimeString().slice(0,8);
+    return `<div class="chart-bar" style="height:${barH}px;background:${c};opacity:${0.5+i/vals.length*0.5};" data-tip="${v.toFixed(1)}°C ${t}"></div>`;
+  }).join('');
+  // 29°C grid line
+  const gridPct = (29-mn)/(mx-mn)*h;
+  area.innerHTML = `<div class="chart-grid" style="bottom:${gridPct}px;"></div>` + bars;
+  if(vals.length>1) document.getElementById('chart-range').textContent =
+    Math.min(...vals).toFixed(1)+'°C — '+Math.max(...vals).toFixed(1)+'°C';
+}
+
+// ─── RULES ────────────────────────────────────────────────────────────────
+let ruleTriggered = false;
+function checkRules(val, source) {
+  const banner = document.getElementById('alert-banner');
+  const rs = document.getElementById('rule-status');
+  const ad = document.getElementById('auto-devices');
+  if(val > 29 && !ruleTriggered) {
+    ruleTriggered = true;
+    banner.className = 'alert-banner danger';
+    toast(`⚡ Nhiệt độ ${val.toFixed(1)}°C — Kịch bản tự động kích hoạt!`,'danger');
+    addLog('danger',`Kịch bản "Tự động bật điều hòa" kích hoạt — Temp: ${val.toFixed(1)}°C`,'Automation Service');
+    DEVS.find(d=>d.id===2).on = true;
+    renderDevices();
+    if(channel) channel.publish('alert',{type:'temp_high',val,timestamp:Date.now()});
+  } else if(val <= 29) {
+    ruleTriggered = false;
+    banner.className = 'alert-banner hidden';
+  }
+
+  const rules = [
+    {nm:'Bật điều hòa khi nhiệt độ > 29°C',active:val>29,val:`${val.toFixed(1)}°C`},
+    {nm:'Cảnh báo khi nhiệt độ > 32°C',active:val>32,val:`${val.toFixed(1)}°C`},
+    {nm:'Tắt đèn sau 20:00',active:new Date().getHours()>=20,val:'Theo thời gian'},
+  ];
+  rs.innerHTML = rules.map(r=>
+    `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+      <div style="width:6px;height:6px;border-radius:50%;background:${r.active?'var(--accent)':'var(--text3)'};flex-shrink:0;${r.active?'box-shadow:0 0 6px var(--accent);':''}"></div>
+      <div style="flex:1;font-size:12px;color:${r.active?'var(--text)':'var(--text2)'};">${r.nm}</div>
+      <span class="tag ${r.active?'ton':'toff'}">${r.active?'ACTIVE':'OFF'}</span>
+    </div>`
+  ).join('');
+
+  const autoD = DEVS.filter(d=>d.type==='ac');
+  ad.innerHTML = autoD.map(d=>
+    `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:14px;">❄️</span>
+      <div style="flex:1;font-size:12px;">${d.nm}</div>
+      <span class="tag ${d.on?'ton':'toff'}">${d.on?'BẬT':'TẮT'}</span>
+    </div>`
+  ).join('');
+}
+
+// ─── DEVICES ──────────────────────────────────────────────────────────────
+function renderDevices() {
+  document.getElementById('devgrid').innerHTML = DEVS.map(d=>{
+    const m=DMETA[d.type];
+    return`<div class="dcard ${d.on?'on':''}">
+      <div class="dcard-ico">${m.ico}</div>
+      <div class="dcard-nm">${d.nm}</div>
+      <div class="dcard-loc">${d.loc}</div>
+      <div class="dcard-bot">
+        <span class="tag ${d.on?'ton':'toff'}">${d.on?'ON':'OFF'}</span>
+        <button class="tog ${d.on?'on':'off'}" onclick="togDev(${d.id})"></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function togDev(id) {
+  const d=DEVS.find(x=>x.id===id); d.on=!d.on;
+  renderDevices(); addLog(d.on?'ok':'warn',`${d.nm}: ${d.on?'Bật':'Tắt'}`, 'Device Service');
+  if(channel) channel.publish('device-state',{deviceId:id,state:d.on});
+  toast(`${d.nm}: ${d.on?'Đã bật':'Đã tắt'}`,d.on?'ok':'warn');
+}
+
+// ─── DEMO ─────────────────────────────────────────────────────────────────
+function updateDemo(v) {
+  demoTemp = v;
+  document.getElementById('demo-val').textContent = v.toFixed(1)+'°C';
+  renderSimFlow(v);
+}
+function sendDemoTemp() {
+  receiveTemp(demoTemp, 'Manual Demo', 'Slider');
+  if(channel && ablyConnected) channel.publish('temperature',{value:demoTemp,source:'Manual Demo',label:'Slider'});
+  toast(`Đã gửi ${demoTemp.toFixed(1)}°C lên hệ thống`,'ok');
+}
+
+const SIM_STEPS = [
+  {svc:'Monitoring Service',c:'#3b82f6',desc:(v)=>`Nhận nhiệt độ <strong style="color:#eee">${v}°C</strong> từ cảm biến → phát event <code style="background:rgba(34,211,160,0.1);color:#22d3a0;padding:1px 4px;border-radius:3px;">temperature.alert</code> lên Kafka`},
+  {svc:'Automation Service',c:'#f59e0b',desc:(v)=>`Lắng nghe Kafka → kiểm tra rule <code style="background:rgba(245,158,11,0.1);color:#f59e0b;padding:1px 4px;border-radius:3px;">IF temp > 29°C</code> → ${v>29?'<strong style="color:#22d3a0">Khớp! Kích hoạt hành động</strong>':'<span style="color:#505060">Không khớp, chờ...</span>'}`},
+  {svc:'Device Service',c:'#22d3a0',desc:(v)=>v>29?`Gửi lệnh MQTT → bật điều hòa → nhận <code style="background:rgba(34,211,160,0.1);color:#22d3a0;padding:1px 4px;border-radius:3px;">ACK</code> từ thiết bị`:'<span style="color:#505060">Chờ lệnh từ Automation Service...</span>'},
+  {svc:'Notification Service',c:'#ef4444',desc:(v)=>v>29?`Firebase FCM → push <strong style="color:#eee">"Nhiệt độ ${v}°C — Đã bật điều hòa tự động"</strong> đến điện thoại`:'<span style="color:#505060">Chờ trigger...</span>'},
+];
+function renderSimFlow(v) {
+  const active = v > 29;
+  document.getElementById('sim-flow').innerHTML = SIM_STEPS.map((s,i)=>
+    `<div style="display:flex;gap:10px;padding:10px 0;position:relative;${i<3?'border-bottom:1px solid var(--border)':''}">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:var(--mono);font-weight:700;flex-shrink:0;background:${active?s.c+'18':'var(--bg4)'};color:${active?s.c:'var(--text3)'};">${i+1}</div>
+      <div>
+        <div style="font-size:9px;font-family:var(--mono);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${active?s.c:'var(--text3)'};margin-bottom:3px;">${s.svc}</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5;">${s.desc(v)}</div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+// ─── WEATHER ──────────────────────────────────────────────────────────────
+function getWeather() {
+  const el = document.getElementById('weather-result');
+  el.textContent = '📍 Đang lấy vị trí...';
+  if(!navigator.geolocation) { el.textContent = 'Trình duyệt không hỗ trợ GPS'; return; }
+  navigator.geolocation.getCurrentPosition(async pos => {
+    el.textContent = '🌐 Đang tải nhiệt độ...';
+    try {
+      const {latitude:lat, longitude:lon} = pos.coords;
+      const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=celsius`);
+      const data = await res.json();
+      const temp = data.current_weather.temperature;
+      el.innerHTML = `🌤 Ngoài trời: <strong style="color:var(--accent);font-size:16px;">${temp}°C</strong><br><span style="color:var(--text3);font-size:10px;">${lat.toFixed(4)}, ${lon.toFixed(4)}</span>`;
+      receiveTemp(temp, '🌤 Thời tiết thực tế', `GPS: ${lat.toFixed(2)},${lon.toFixed(2)}`);
+      if(channel && ablyConnected) channel.publish('temperature',{value:temp,source:'🌤 Thời tiết thực tế',label:'GPS'});
+      toast(`🌤 Nhiệt độ ngoài trời: ${temp}°C`,'info');
+    } catch(e) { el.textContent = 'Lỗi tải dữ liệu thời tiết'; }
+  }, () => { el.textContent = 'Không lấy được vị trí. Cho phép GPS và thử lại.'; });
+}
+
+// ─── LOG ──────────────────────────────────────────────────────────────────
+function addLog(type, msg, svc) {
+  const now = new Date();
+  logEntries.unshift({type, msg, svc, time: now.toTimeString().slice(0,8)});
+  if(logEntries.length > 50) logEntries.pop();
+  renderLog();
+}
+function renderLog() {
+  const dc={danger:'var(--danger)',warn:'var(--warn)',info:'var(--info)',ok:'var(--accent)'};
+  document.getElementById('event-log').innerHTML = logEntries.map(e=>
+    `<div class="nitem"><div class="ndot" style="background:${dc[e.type]};"></div>
+    <div><div class="ntitle">${e.msg}</div>
+    <div class="nbody">${e.svc}</div>
+    <div class="ntime">${e.time}</div></div></div>`
+  ).join('') || '<div style="padding:14px;font-size:12px;font-family:var(--mono);color:var(--text3);">Chưa có sự kiện...</div>';
+}
+function clearLog() { logEntries=[]; renderLog(); toast('Đã xóa log','ok'); }
+
+// ─── CONNECT PAGE ─────────────────────────────────────────────────────────
+function renderConnectPage() {
+  document.getElementById('mobile-url').textContent = MOBILE_URL;
+
+  // QR code — simple pixel-based
+  const canvas = document.getElementById('qr-canvas');
+  generateSimpleQR(canvas, MOBILE_URL);
+
+  const steps=[
+    {n:'1',desc:'Mở trình duyệt Chrome/Safari trên điện thoại'},
+    {n:'2',desc:'Quét QR code hoặc nhập URL bên trên'},
+    {n:'3',desc:'Nhấn "Cho phép" khi được hỏi quyền truy cập GPS'},
+    {n:'4',desc:'Nhấn "Kết nối" trên điện thoại — dashboard sẽ báo khi đã kết nối'},
+    {n:'5',desc:'Bắt đầu gửi nhiệt độ: thủ công, GPS, hoặc nhiệt độ pin'},
+  ];
+  document.getElementById('connect-steps').innerHTML = steps.map(s=>
+    `<div style="display:flex;gap:10px;align-items:flex-start;">
+      <div style="width:22px;height:22px;border-radius:50%;background:var(--adim);color:var(--accent);font-size:10px;font-family:var(--mono);font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${s.n}</div>
+      <div style="font-size:12px;color:var(--text2);padding-top:2px;">${s.desc}</div>
+    </div>`
+  ).join('');
+
+  const caps=[
+    {ico:'🌤',nm:'Nhiệt độ thời tiết',desc:'Qua GPS + Open-Meteo API',ok:true},
+    {ico:'🔋',nm:'Nhiệt độ pin (Android)',desc:'Qua Battery API (giới hạn)',ok:true},
+    {ico:'✍️',nm:'Nhập thủ công',desc:'Nhập nhiệt độ bất kỳ',ok:true},
+    {ico:'🎛️',nm:'Điều khiển thiết bị',desc:'Bật/tắt đèn, điều hòa',ok:true},
+    {ico:'🌡',nm:'Nhiệt độ môi trường',desc:'Cần sensor ngoài (ESP32)',ok:false},
+  ];
+  document.getElementById('sensor-caps').innerHTML = caps.map(c=>
+    `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:14px;">${c.ico}</span>
+      <div style="flex:1;"><div style="font-size:12px;font-weight:500;">${c.nm}</div><div style="font-size:10px;font-family:var(--mono);color:var(--text3);">${c.desc}</div></div>
+      <span class="tag ${c.ok?'ton':'toff'}">${c.ok?'✓':'—'}</span>
+    </div>`
+  ).join('');
+
+  document.getElementById('conn-status-detail').innerHTML =`
+    <div style="font-size:12px;font-family:var(--mono);color:var(--text2);">
+      Channel: <span style="color:var(--accent);">${CHANNEL_ID}</span><br>
+      URL điện thoại: <span style="color:var(--warn);word-break:break-all;">${MOBILE_URL}</span><br>
+      Trạng thái: <span id="conn-status-text" style="color:${ablyConnected?'var(--accent)':'var(--danger)'};">${ablyConnected?'Connected':'Disconnected'}</span>
+    </div>`;
+}
+
+// Very simple QR-like visual using canvas (just encodes URL visually)
+function generateSimpleQR(canvas, text) {
+  const ctx = canvas.getContext('2d');
+  const size = 80;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,size,size);
+  // Draw URL as text QR placeholder
+  ctx.fillStyle = '#000';
+  ctx.font = '5px monospace';
+  ctx.fillText('SCAN FOR', 8, 16);
+  ctx.fillText('MOBILE APP', 5, 24);
+  // Draw fake QR pattern
+  const cells = 10;
+  const cs = (size-10)/cells;
+  for(let r=0;r<cells;r++) for(let c=0;c<cells;c++) {
+    if((r<3&&c<3)||(r<3&&c>=7)||(r>=7&&c<3)) { ctx.fillRect(5+c*cs,5+r*cs,cs,cs); continue; }
+    if(Math.sin(r*13+c*7+text.charCodeAt(r%text.length))>0.2) ctx.fillRect(5+c*cs,5+r*cs,cs,cs);
+  }
+}
+
+function showConnectPage() {
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelector('[data-page="connect"]').classList.add('active');
+  document.getElementById('page-connect').classList.add('active');
+  document.getElementById('ptitle').textContent='Kết nối điện thoại';
+  document.getElementById('pbadge').textContent='Ably Realtime';
+  renderConnectPage();
+}
+
+function sendTestAlert() {
+  receiveTemp(31.5,'Test Alert','Manual');
+  toast('Test alert đã gửi','warn');
+}
+
+// ─── NAV ──────────────────────────────────────────────────────────────────
+const PMETA={realtime:{t:'Nhiệt độ thực tế',b:'Nhận từ điện thoại'},devices:{t:'Thiết bị',b:'Device Service'},demo:{t:'Demo & Mô phỏng',b:'Câu 3'},log:{t:'Nhật ký sự kiện',b:'Realtime Log'},connect:{t:'Kết nối điện thoại',b:'Ably Realtime'}};
+document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const p=el.dataset.page;
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('page-'+p).classList.add('active');
+    const m=PMETA[p]||{t:p,b:''};
+    document.getElementById('ptitle').textContent=m.t;
+    document.getElementById('pbadge').textContent=m.b;
+    if(p==='connect') renderConnectPage();
+  });
+});
+
+// ─── CLOCK ────────────────────────────────────────────────────────────────
+function tickClock(){const n=new Date();document.getElementById('clk').textContent=n.toTimeString().slice(0,8);document.getElementById('ddate').textContent=n.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit'}).toUpperCase();}
+setInterval(tickClock,1000); tickClock();
+
+// ─── TOAST ────────────────────────────────────────────────────────────────
+function toast(msg,type='info'){const cols={info:'var(--info)',ok:'var(--accent)',warn:'var(--warn)',danger:'var(--danger)'};const icos={info:'ℹ',ok:'✓',warn:'⚠',danger:'⚡'};const w=document.getElementById('tw');const el=document.createElement('div');el.className='toast';el.innerHTML=`<span style="color:${cols[type]}">${icos[type]}</span>${msg}`;w.appendChild(el);setTimeout(()=>{el.classList.add('to');setTimeout(()=>el.remove(),300);},3000);}
+
+function updateConnDetail() {
+  const el = document.getElementById('conn-status-text');
+  if(el) { el.textContent = ablyConnected ? 'Connected' : 'Disconnected'; el.style.color = ablyConnected ? 'var(--accent)' : 'var(--danger)'; }
+}
+setInterval(updateConnDetail, 2000);
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+renderDevices();
+renderSimFlow(27);
+renderLog();
+checkRules(27,'init');
+initAbly();
+addLog('info', 'Dashboard khởi động — chờ kết nối từ điện thoại', 'System');
+toast('Dashboard đang chạy — mở điện thoại để kết nối','info');
+</script>
+</body>
+</html>
